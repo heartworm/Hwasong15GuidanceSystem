@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 
-
 def show_val(event,x,y,flags,param):
     if event != cv2.EVENT_LBUTTONDOWN:
         return
@@ -43,25 +42,27 @@ def denoise(img):
     blurredImg = cv2.medianBlur(img, 9)
     return blurredImg
     
-img = cv2.imread("soccerball.jpg")
-denoised = denoise(img)
-hsv = cv2.cvtColor(denoised, cv2.COLOR_RGB2HSV)
 
-ballMask = getBallMaskHSV(hsv)
-wallMask = getWallMaskHSV(hsv)
+if __name__ == "__main__":
+    img = cv2.imread("soccerball.jpg")
+    denoised = denoise(img)
+    hsv = cv2.cvtColor(denoised, cv2.COLOR_RGB2HSV)
 
-ballKeypoints = getBallBlobKeypoints(255 - ballMask)
-keypointsImg = cv2.drawKeypoints(img, ballKeypoints, np.array([]), (255, 255, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    ballMask = getBallMaskHSV(hsv)
+    wallMask = getWallMaskHSV(hsv)
+
+    ballKeypoints = getBallBlobKeypoints(255 - ballMask)
+    keypointsImg = cv2.drawKeypoints(img, ballKeypoints, np.array([]), (255, 255, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
 
-cv2.namedWindow('image')
-cv2.setMouseCallback('image', show_val)
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', show_val)
 
-cv2.imshow('image', denoised)
-cv2.imshow('balls', ballMask)
-cv2.imshow('walls', wallMask)
-cv2.imshow('blobs', keypointsImg)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    cv2.imshow('image', denoised)
+    cv2.imshow('balls', ballMask)
+    cv2.imshow('walls', wallMask)
+    cv2.imshow('blobs', keypointsImg)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
