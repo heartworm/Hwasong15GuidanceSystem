@@ -9,7 +9,7 @@ def show_val(event,x,y,flags,param):
 
     
 def getBallMaskHSV(img):
-    ballLower = np.array([105, 150, 50])
+    ballLower = np.array([105, 175, 50])
     ballUpper = np.array([125, 250, 255])
     ballMask = cv2.inRange(img, ballLower, ballUpper)
     ballMaskEroded = cv2.erode(ballMask, None)
@@ -25,7 +25,7 @@ def getBallBlobKeypoints(mask):
     ballDetectorParams = cv2.SimpleBlobDetector_Params()
     ballDetectorParams.filterByArea = False
     ballDetectorParams.filterByConvexity = False
-    ballDetectorParams.filterByCircularity = False
+    ballDetectorParams.filterByCircularity = True
     ballDetectorParams.filterByInertia = False
     ballDetectorParams.minThreshold = 0
     ballDetectorParams.maxThreshold = 255
