@@ -3,10 +3,12 @@
 
 #include "Arduino.h"
 
+//Define Start, End, and Escape flags to use 
 #define STX 0xFD
 #define ETX 0xFE
 #define ESC 0xFF
 
+//Specify the the maximum packet length receivable (buffer size)
 #define BUF_LEN 10
 
 class Proto {
