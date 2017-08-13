@@ -1,13 +1,3 @@
-FMT_GETSTATUS = {
-    'centerOfLine':0,
-    'avgSpeed':1,
-    'valA':2,
-    'speedA':3,
-    'actualA':4,
-    'valB':5,
-    'speedB':6,
-    'actualB':7
-}
-
-HDR_GETSTATUS = 0x00
-HDR_SENDAVG = 0x01
+HDR_LEFTMOTOR = 0x01
+HDR_RIGHTMOTOR = 0x00
+MAX_PWM = 255

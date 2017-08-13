@@ -5,7 +5,6 @@ FLG_ESC = 0xFF
 FLG_ETX = 0xFE
 FLG_STX = 0xFD
 
-
 class Communicator:
 	def __init__(self, baud, port, listener):
 		self.recv_buffer = bytearray()
@@ -70,7 +69,7 @@ class Communicator:
 			out_len = len(self.write_buffer)
 			if out_len > 0:
 				bytes_out = self.write_buffer[0:out_len]
-				self.ser.write(self.write_buffer)
+				self.ser.write(bytes_out)
 				del self.write_buffer[0:out_len]
 	
 	def read_task(self):

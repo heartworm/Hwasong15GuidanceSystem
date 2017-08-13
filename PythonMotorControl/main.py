@@ -1,13 +1,13 @@
-import communicator as com
+from communicator import Communicator
+from motor_controller import MotorController
 import tkinter as tk
-from consts import * 
-from struct import *
+import consts
 
 def packet_to_dict(pkt, fmt):
     return {key: pkt[ind] for key, ind in fmt.items()}
 
 def listener(data):
-    return
+    print("received", data)
     # if len(data) >= 1:
         # header = data[0]
         # body = data[1:]
@@ -25,13 +25,9 @@ def on_closing():
     c.close()
     win.destroy()
 
-def send_pwm():
-    newPwm = int(strPwm.get())
-    print("new motor val ", newPwm)
-    bytes_out = pack("<BBB", 0x01, 0x00, newPwm)
-    print("Bytes sent: ", bytes_out)
-    c.write(bytes_out)
-    
+def send_speed():
+	mc.set_motors(float(str_left.get()), float(str_right.get()))
+
 if __name__ == "__main__":	
 	comPort = input("Which COM port to use: ")
 		
@@ -41,18 +37,25 @@ if __name__ == "__main__":
 	frame = tk.Frame(win)
 	frame.pack(fill = tk.BOTH, expand = 1)
 		
-	strPwm = tk.StringVar()
-	strPwm.set("100")
+	str_left = tk.StringVar()
+	str_left.set("0")
+	
+	str_right = tk.StringVar()
+	str_right.set("0")
 				 
-	c = com.Communicator(115200, comPort, listener) 
+	c = Communicator(115200, comPort, listener) 
 	c.open()
+	
+	mc = MotorController(c)
 
-	tk.Entry(frame, textvariable = strPwm).grid(column = 0, row = 0, sticky="WE")
-	tk.Button(frame, text = "Send PWM", command = send_pwm).grid(column = 1, row = 0, sticky="WE")
+	tk.Entry(frame, textvariable = str_left).grid(column = 0, row = 0, sticky="WE")
+	tk.Entry(frame, textvariable = str_right).grid(column = 1, row = 0, sticky="WE")
+	tk.Button(frame, text = "Send Speeds", command = send_speed).grid(column = 0, row = 1, sticky="WE")
 
 	tk.Grid.rowconfigure(frame, 0, weight=1)
 
 	tk.Grid.columnconfigure(frame, 0, weight=1)
+	tk.Grid.columnconfigure(frame, 1, weight=1)
 
 	win.protocol("WM_DELETE_WINDOW", on_closing)
 
