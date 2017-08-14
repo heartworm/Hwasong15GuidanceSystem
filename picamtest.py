@@ -5,8 +5,8 @@ import test
 
 showVideo = True
 
-
 def show_val(event,x,y,flags,param):
+
     if event != cv2.EVENT_LBUTTONDOWN:
         return
     pixel = hsv[y,x]
@@ -18,11 +18,14 @@ cv2.setMouseCallback('videooutput', show_val)
 
 cv2.namedWindow('ballfinder')
 
-with PiStream as stream:
+
+with PiStream(resolution=(160,120)) as stream:
     while showVideo:
         img = stream.get_frame()
-        img = test.denoise(img)
-        hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+        denoised = test.denoise(img)
+
+        hsv = cv2.cvtColor(denoised, cv2.COLOR_RGB2HSV)
+
 
         ballMask = test.getBallMaskHSV(hsv)
 

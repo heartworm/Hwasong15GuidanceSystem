@@ -10,11 +10,14 @@ class PiStream:
             self.camera = PiCamera()
             self.camera.resolution = resolution
             self.camera.framerate = framerate
+            self.camera.image_effect = 'denoise'
 
-            self.rgb_buffer = PiRGBArray(self.camera, size=resolution)
-            self.frame_gen = self.camera.capture_continuous(self.rgb_buffer,
-                                                         format="rgb",
-                                                         use_video_port=True)
+            self.camera.exposure_mode = 'fixedfps'
+
+            self.bgr_buffer = PiRGBArray(self.camera, size=resolution)
+            self.frame_gen = self.camera.capture_continuous(self.bgr_buffer,
+                                                            format="bgr",
+                                                            use_video_port=True)
             self.frame_event = Event()
             self.frame = None
             self.stop_flag = False
@@ -28,22 +31,23 @@ class PiStream:
             pass
         finally:
             self.camera.close()
-            self.rgb_buffer.close()
+            self.bgr_buffer.close()
             self.frame_gen.close()
 
     def __enter__(self):
         self.frame_thread = Thread(target=self.capture_loop)
         self.frame_thread.start()
+        return self
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.stop_flag = True
         self.frame_thread.join()
 
     def capture_loop(self):
         for frame in self.frame_gen:
             self.frame_event.set()
-            self.frame = self.rgb_buffer.array
-            self.rgb_buffer.truncate(0)
+            self.frame = self.bgr_buffer.array
+            self.bgr_buffer.truncate(0)
 
             if self.stop_flag:
                 self.release()
@@ -51,7 +55,6 @@ class PiStream:
 
     def get_frame(self):
         self.frame_event.wait()
-        print("frameeee has been read")
         self.frame_event.clear()
         return self.frame
 
