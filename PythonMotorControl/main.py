@@ -1,6 +1,6 @@
 from communicator import Communicator
 from motor_controller import MotorController
-import tkinter as tk
+import Tkinter as tk
 import consts
 
 def packet_to_dict(pkt, fmt):
