@@ -4,12 +4,12 @@ import math
 
 class ImageAnalyser:
     def __init__(self):
-        self.fov = np.array((math.radians(60), math.radians(60)))
+        self.fov = np.array((math.radians(62.2), math.radians(48.8)))
         self.tilt = math.radians(90 - 0)
         self.camHeight = 0.1
         self.res = np.array((-1,-1))
         self.ballProps = {
-            "dimensions": (0.05, 0.05)
+            "dimensions": (0.0427, 0.0427)
         }
         self.obstacleProps = {
             "dimensions": (0.18, 0.18)
@@ -18,35 +18,38 @@ class ImageAnalyser:
         self.ballPos = None
 
     def analyse(self, img):
-        self.res = np.shape(img) [0:2]
+        self.res = np.array(np.shape(img)[1::-1], dtype='float')
         denoised = self.denoiseRaw(img)
 
         hsv = cv2.cvtColor(denoised, cv2.COLOR_BGR2HSV)
 
         ballMask = self.ballThreshold(hsv)
-        ballContours = self.findContours(ballMask)
+        ballContours = self.findContours(np.array(ballMask))
         if ballContours is not None:
-            for ballContour in ballContours:
-                cv2.drawContours(denoised, ballContours, -1, (255,0,0))
-                ballInfo = self.contourInfo(ballContour)
-                self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
-                self.drawContourInfo(denoised, ballInfo, self.ballPos)
+            areaGetter = lambda info: info["area"]
+            ballInfos = sorted([self.contourInfo(contour) for contour in ballContours], key=areaGetter, reverse=True)
+            ballInfo = ballInfos[0]
+            # for ballInfo in ballInfos:
+            self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
+            self.drawContourInfo(denoised, ballInfo, self.ballPos)
+                # break
 
-        wallMask = self.wallThreshold(hsv)
-        grassMask = self.grassThreshold(hsv)
-
-        obstacleMask = self.obstacleThreshold(hsv)
-        obstacleContours = self.findContours(obstacleMask)
-        if obstacleContours is not None:
-            for obstacleContour in obstacleContours:
-                cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
-                obstacleInfo = self.contourInfo(obstacleContour)
-                self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
-        cv2.imshow('obstacle', obstacleMask)
-        cv2.imshow('wall', wallMask)
-        cv2.imshow('grass', grassMask)
         cv2.imshow('ball', ballMask)
+        #
+        # wallMask = self.wallThreshold(hsv)
+        # grassMask = self.grassThreshold(hsv)
+
+        # obstacleMask = self.obstacleThreshold(hsv)
+        # obstacleContours = self.findContours(obstacleMask)
+        # if obstacleContours is not None:
+        #     for obstacleContour in obstacleContours:
+        #         cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
+        #         obstacleInfo = self.contourInfo(obstacleContour)
+        #         self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
+        #         self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
+        # cv2.imshow('obstacle', obstacleMask)
+        # cv2.imshow('wall', wallMask)
+        # cv2.imshow('grass', grassMask)
         cv2.imshow('denoised', denoised)
         cv2.waitKey(1)
 
@@ -62,8 +65,9 @@ class ImageAnalyser:
         cv2.circle(img, center, 2, (255,0,255))
 
         if coordinates is not None:
+            color = (255,0,255) if coordinates[2] else (0,0,255)
             text = "{:.2f}, {:.2f}".format(coordinates[0], coordinates[1])
-            cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,0,255), 1)
+            cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
     def contourInfo(self, contour):
         contourVec = np.squeeze(contour)
@@ -80,7 +84,8 @@ class ImageAnalyser:
         contourDict["area"] = cv2.contourArea(contour)
         contourDict["perimeter"] = cv2.arcLength(contour, False)
         contourDict["circularity"] = 4 * math.pi * contourDict["area"] / (math.pow(contourDict["perimeter"], 2))
-        contourDict["aspect"] = width / height
+        contourDict["aspect"] = float(width) / float(height)
+        contourDict["raw"] = contour
 
         return contourDict
 
@@ -90,11 +95,12 @@ class ImageAnalyser:
         zValues = np.divide(props["dimensions"], np.tan(angles))
         z = np.mean(zValues)
 
+        reliable = True
         halfRes = np.multiply(self.res, 0.5)
-
         bottomY = cinfo["box"][1][1]
-        if (self.res[1] - bottomY) / self.res[1] <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2:
-            print("Unreliable blob shape")
+
+        if (self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2:
+            reliable = False
             vertAngle = self.tilt - ((bottomY - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
             if vertAngle >= 90:
                 return None
@@ -103,7 +109,7 @@ class ImageAnalyser:
         xAngle = (cinfo["centroid"][0] - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
         x = z * math.tan(xAngle)
 
-        return x, z
+        return x, z, reliable
 
 
     def ballThreshold(self, hsv):

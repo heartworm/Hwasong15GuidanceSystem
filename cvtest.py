@@ -28,6 +28,8 @@ with PiStream(resolution = resolution) as stream:
     while showVideo:
         img = stream.get_frame()
 
+        hsv = cv2.cvtColor()
+
         analyser.analyse(img)
 
         fps_str = str(round(next(fps), 2))
