@@ -21,14 +21,12 @@ def gen_fps():
         fps_lasttime = newtime
         yield fps
 
-resolution = (160,120)
+resolution = (320,240)
 
 with PiStream(resolution = resolution) as stream:
     fps = gen_fps()
     while showVideo:
         img = stream.get_frame()
-
-        hsv = cv2.cvtColor()
 
         analyser.analyse(img)
 

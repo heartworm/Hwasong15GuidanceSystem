@@ -12,7 +12,7 @@ class ImageAnalyser:
             "dimensions": (0.0427, 0.0427)
         }
         self.obstacleProps = {
-            "dimensions": (0.18, 0.18)
+            "dimensions": (0.18, 0.225)
         }
 
         self.ballPos = None
@@ -35,19 +35,19 @@ class ImageAnalyser:
                 # break
 
         cv2.imshow('ball', ballMask)
-        #
+
         # wallMask = self.wallThreshold(hsv)
         # grassMask = self.grassThreshold(hsv)
 
-        # obstacleMask = self.obstacleThreshold(hsv)
-        # obstacleContours = self.findContours(obstacleMask)
-        # if obstacleContours is not None:
-        #     for obstacleContour in obstacleContours:
-        #         cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
-        #         obstacleInfo = self.contourInfo(obstacleContour)
-        #         self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-        #         self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
-        # cv2.imshow('obstacle', obstacleMask)
+        obstacleMask = self.obstacleThreshold(hsv)
+        obstacleContours = self.findContours(np.array(obstacleMask))
+        if obstacleContours is not None:
+            for obstacleContour in obstacleContours:
+                cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
+                obstacleInfo = self.contourInfo(obstacleContour)
+                self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
+                self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
+        cv2.imshow('obstacle', obstacleMask)
         # cv2.imshow('wall', wallMask)
         # cv2.imshow('grass', grassMask)
         cv2.imshow('denoised', denoised)
@@ -70,9 +70,15 @@ class ImageAnalyser:
             cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
     def contourInfo(self, contour):
-        contourVec = np.squeeze(contour)
+        contourVec = np.reshape(contour, (-1, 2))
         contourDict = {}
-        coordsX = contourVec[:, 0]
+
+        try:
+            coordsX = contourVec[:, 0]
+        except IndexError as e:
+            print(contourVec)
+            print(np.shape(contourVec))
+            raise e
         coordsY = contourVec[:, 1]
         box = ((np.min(coordsX), np.min(coordsY)),
                (np.max(coordsX), np.max(coordsY)))
@@ -82,9 +88,19 @@ class ImageAnalyser:
         contourDict["box"] = box
         contourDict["dimensions"] = (width, height)
         contourDict["area"] = cv2.contourArea(contour)
-        contourDict["perimeter"] = cv2.arcLength(contour, False)
-        contourDict["circularity"] = 4 * math.pi * contourDict["area"] / (math.pow(contourDict["perimeter"], 2))
-        contourDict["aspect"] = float(width) / float(height)
+
+        arcLength = cv2.arcLength(contour, False)
+        contourDict["perimeter"] = arcLength
+        if arcLength > 0:
+            contourDict["circularity"] = 4 * math.pi * contourDict["area"] / (math.pow(contourDict["perimeter"], 2))
+        else:
+            contourDict["circularity"] = 1
+
+        try:
+            contourDict["aspect"] = float(width) / float(height)
+        except ZeroDivisionError as e:
+            contourDict["aspect"] = float('inf')
+
         contourDict["raw"] = contour
 
         return contourDict
@@ -102,7 +118,7 @@ class ImageAnalyser:
         if (self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2:
             reliable = False
             vertAngle = self.tilt - ((bottomY - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
-            if vertAngle >= 90:
+            if vertAngle >= (math.pi / 2):
                 return None
             z = self.camHeight * math.tan(vertAngle)
 
@@ -113,10 +129,10 @@ class ImageAnalyser:
 
 
     def ballThreshold(self, hsv):
-        ballLower = np.array([0, 200, 0])
-        ballUpper = np.array([25, 255, 255])
+        ballLower = np.array([0, 100, 100])
+        ballUpper = np.array([15, 255, 255])
         ballMask = cv2.inRange(hsv, ballLower, ballUpper)
-        return self.open(ballMask, 9)
+        return self.open(ballMask, 3)
 
     def grassThreshold(self, hsv):
         ballLower = np.array([50, 0, 0])
@@ -134,8 +150,8 @@ class ImageAnalyser:
         return self.open(wallMask, 9)
 
     def obstacleThreshold(self, hsv):
-        obstacleLower = np.array([0, 0, 0])
-        obstacleUpper = np.array([255, 50, 100])
+        obstacleLower = np.array([0, 200, 0])
+        obstacleUpper = np.array([255, 255, 50])
         obstacleMask = cv2.inRange(hsv, obstacleLower, obstacleUpper)
         return self.open(obstacleMask, 9)
 
