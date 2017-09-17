@@ -4,9 +4,10 @@ import math
 
 class ImageAnalyser:
     def __init__(self):
-        self.fov = np.array((math.radians(62.2), math.radians(48.8)))
+        self.fov = np.array((math.radians(75), math.radians(50)))
+        # self.fov = np.array((math.radians(62.2), math.radians(48.8)))
         self.tilt = math.radians(90 - 0)
-        self.camHeight = 0.1
+        self.camHeight = 0.215
         self.res = np.array((-1,-1))
         self.ballProps = {
             "dimensions": (0.0427, 0.0427)
@@ -46,7 +47,7 @@ class ImageAnalyser:
                 cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
                 obstacleInfo = self.contourInfo(obstacleContour)
                 self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
+                # self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
         cv2.imshow('obstacle', obstacleMask)
         # cv2.imshow('wall', wallMask)
         # cv2.imshow('grass', grassMask)
