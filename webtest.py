@@ -29,9 +29,9 @@ try:
     while showVideo and cap.isOpened():
         ret, img = cap.read()
         if ret:
-            fps_str = str(round(next(fps), 2))
-            cv2.putText(img, fps_str, (10, resolution[1] - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255,0,0))
-            cv2.imshow('videooutput', img)
+            # fps_str = str(round(next(fps), 2))
+            # cv2.putText(img, fps_str, (10, resolution[1] - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255,0,0))
+            # cv2.imshow('videooutput', img)
             analyser.analyse(img)
 except KeyboardInterrupt:
     print("quitting.")

@@ -4,10 +4,10 @@ import math
 
 class ImageAnalyser:
     def __init__(self):
-        self.fov = np.array((math.radians(75), math.radians(50)))
-        # self.fov = np.array((math.radians(62.2), math.radians(48.8)))
+        # self.fov = np.array((math.radians(80), math.radians(50)))
+        self.fov = np.array((math.radians(62.2), math.radians(48.8)))
         self.tilt = math.radians(90 - 0)
-        self.camHeight = 0.215
+        self.camHeight = 0.1
         self.res = np.array((-1,-1))
         self.ballProps = {
             "dimensions": (0.0427, 0.0427)
@@ -20,20 +20,27 @@ class ImageAnalyser:
 
     def analyse(self, img):
         self.res = np.array(np.shape(img)[1::-1], dtype='float')
+        self.area = self.res[0] * self.res[1]
         denoised = self.denoiseRaw(img)
 
         hsv = cv2.cvtColor(denoised, cv2.COLOR_BGR2HSV)
+        areaGetter = lambda info: info["area"]
 
         ballMask = self.ballThreshold(hsv)
         ballContours = self.findContours(np.array(ballMask))
+        ballMask = cv2.cvtColor(ballMask, cv2.COLOR_GRAY2BGR)
         if ballContours is not None:
-            areaGetter = lambda info: info["area"]
             ballInfos = sorted([self.contourInfo(contour) for contour in ballContours], key=areaGetter, reverse=True)
             ballInfo = ballInfos[0]
-            # for ballInfo in ballInfos:
-            self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
-            self.drawContourInfo(denoised, ballInfo, self.ballPos)
-                # break
+            if ballInfo["area"] >= self.area * 0.001:
+                # for ballInfo in ballInfos:
+                self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
+                self.drawContourInfo(denoised, ballInfo, color=(255,0,255))
+                if self.ballPos is not None:
+                    text = "{:.2f}, {:.2f}, {}".format(self.ballPos[0], self.ballPos[1], self.ballPos[2])
+                    cv2.putText(ballMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+            else:
+                self.ballPos = None
 
         cv2.imshow('ball', ballMask)
 
@@ -42,12 +49,21 @@ class ImageAnalyser:
 
         obstacleMask = self.obstacleThreshold(hsv)
         obstacleContours = self.findContours(np.array(obstacleMask))
+        obstacleMask = cv2.cvtColor(obstacleMask, cv2.COLOR_GRAY2BGR)
         if obstacleContours is not None:
-            for obstacleContour in obstacleContours:
-                cv2.drawContours(denoised, obstacleContours, -1, (255,0,0))
-                obstacleInfo = self.contourInfo(obstacleContour)
+            obstacleInfos = [self.contourInfo(contour) for contour in obstacleContours]
+            obstacleInfos = [info for info in obstacleInfos if info["area"] >= self.area * 0.01]
+            obstacleInfos = sorted(obstacleInfos, key=areaGetter, reverse=True)
+            first = True
+            for obstacleInfo in obstacleInfos:
                 self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                # self.drawContourInfo(denoised, obstacleInfo, self.obstaclePos)
+                text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2]) \
+                    if self.obstaclePos is not None else None
+                self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=text)
+                if first and self.obstaclePos is not None:
+                    first = False
+                    text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2])
+                    cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
         cv2.imshow('obstacle', obstacleMask)
         # cv2.imshow('wall', wallMask)
         # cv2.imshow('grass', grassMask)
@@ -60,14 +76,14 @@ class ImageAnalyser:
     def denoiseRaw(self, img):
         return cv2.medianBlur(img, 3)
 
-    def drawContourInfo(self, img, cinfo, coordinates = None):
-        cv2.rectangle(img, cinfo["box"][0], cinfo["box"][1], (255,0,255))
+    def drawContourInfo(self, img, cinfo, text = None, color = None, thickness = None):
+        color = (255,0,255) if color is None else color
+        thickness = 2 if thickness is None else color
+        cv2.rectangle(img, cinfo["box"][0], cinfo["box"][1], color, thickness)
         center = tuple(int(round(dim)) for dim in cinfo["centroid"])
-        cv2.circle(img, center, 2, (255,0,255))
+        cv2.circle(img, center, 2, color)
 
-        if coordinates is not None:
-            color = (255,0,255) if coordinates[2] else (0,0,255)
-            text = "{:.2f}, {:.2f}".format(coordinates[0], coordinates[1])
+        if text is not None:
             cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
     def contourInfo(self, contour):
@@ -151,8 +167,9 @@ class ImageAnalyser:
         return self.open(wallMask, 9)
 
     def obstacleThreshold(self, hsv):
-        obstacleLower = np.array([0, 200, 0])
-        obstacleUpper = np.array([255, 255, 50])
+        # obstacleLower = np.array([0, 200, 0])
+        obstacleLower = np.array([0, 150, 0])
+        obstacleUpper = np.array([100, 255, 50])
         obstacleMask = cv2.inRange(hsv, obstacleLower, obstacleUpper)
         return self.open(obstacleMask, 9)
 
