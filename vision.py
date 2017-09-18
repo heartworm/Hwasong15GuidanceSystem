@@ -58,17 +58,18 @@ class ImageAnalyser:
             obstacleInfos = [info for info in obstacleInfos if info["area"] >= self.area * 0.01]
             obstacleInfos = sorted(obstacleInfos, key=areaGetter, reverse=True)
             first = True
-            for obstacleInfo in obstacleInfos:
-                self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2]) \
-                    if self.obstaclePos is not None else None
-                self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=text)
-                if first and self.obstaclePos is not None:
-                    first = False
-                    text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2])
-                    cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
-                    text = "{:.2f}, {:.2f}".format(math.degrees(self.obstaclePos[3]), self.obstaclePos[4])
-                    cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+            # for obstacleInfo in obstacleInfos:
+            obstacleInfo = obstacleInfos[0]
+            self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
+            text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2]) \
+                if self.obstaclePos is not None else None
+            self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=text)
+            if first and self.obstaclePos is not None:
+                first = False
+                text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2])
+                cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                text = "{:.2f}, {:.2f}".format(math.degrees(self.obstaclePos[3]), self.obstaclePos[4])
+                cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
         cv2.imshow('obstacle', obstacleMask)
         # cv2.imshow('wall', wallMask)
         # cv2.imshow('grass', grassMask)
