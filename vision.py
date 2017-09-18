@@ -7,6 +7,7 @@ class ImageAnalyser:
         # self.fov = np.array((math.radians(80), math.radians(50)))
         self.fov = np.array((math.radians(62.2), math.radians(48.8)))
         self.tilt = math.radians(90 - 0)
+        # self.camHeight = 0.21
         self.camHeight = 0.1
         self.res = np.array((-1,-1))
         self.ballProps = {
@@ -39,6 +40,8 @@ class ImageAnalyser:
                 if self.ballPos is not None:
                     text = "{:.2f}, {:.2f}, {}".format(self.ballPos[0], self.ballPos[1], self.ballPos[2])
                     cv2.putText(ballMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                    text = "{:.2f}, {:.2f}".format(math.degrees(self.ballPos[3]), self.ballPos[4])
+                    cv2.putText(ballMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
             else:
                 self.ballPos = None
 
@@ -64,6 +67,8 @@ class ImageAnalyser:
                     first = False
                     text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2])
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                    text = "{:.2f}, {:.2f}".format(math.degrees(self.obstaclePos[3]), self.obstaclePos[4])
+                    cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
         cv2.imshow('obstacle', obstacleMask)
         # cv2.imshow('wall', wallMask)
         # cv2.imshow('grass', grassMask)
@@ -142,7 +147,9 @@ class ImageAnalyser:
         xAngle = (cinfo["centroid"][0] - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
         x = z * math.tan(xAngle)
 
-        return x, z, reliable
+        range = math.sqrt(x * x + z * z)
+
+        return x, z, reliable, xAngle, range
 
 
     def ballThreshold(self, hsv):
