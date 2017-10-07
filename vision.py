@@ -35,12 +35,13 @@ class ImageAnalyser:
             ballInfo = ballInfos[0]
             if ballInfo["area"] >= self.area * 0.001:
                 # for ballInfo in ballInfos:
-                self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
+                polar, self.ballPos, reliable = self.realCoordinates(ballInfo, self.ballProps)
+                print(polar, self.ballPos, reliable)
                 self.drawContourInfo(denoised, ballInfo, color=(255,0,255))
-                if self.ballPos is not None:
-                    text = "{:.2f}, {:.2f}, {}".format(self.ballPos[0], self.ballPos[1], self.ballPos[2])
+                if self.ballPos[0] is not None:
+                    text = "{:.2f}, {:.2f}, {}".format(*self.ballPos, reliable)
                     cv2.putText(ballMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
-                    text = "{:.2f}, {:.2f}".format(math.degrees(self.ballPos[3]), self.ballPos[4])
+                    text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
                     cv2.putText(ballMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
             else:
                 self.ballPos = None
@@ -59,15 +60,15 @@ class ImageAnalyser:
             # for obstacleInfo in obstacleInfos:
             if len(obstacleInfos) > 0:
                 obstacleInfo = obstacleInfos[0]
-                self.obstaclePos = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2]) \
+                polar, self.obstaclePos, reliable = self.realCoordinates(obstacleInfo, self.obstacleProps)
+                text = "{:.2f}, {:.2f}, {}".format(*polar, reliable) \
                     if self.obstaclePos is not None else None
                 self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=text)
-                if first and self.obstaclePos is not None:
+                if first and self.obstaclePos[0] is not None:
                     first = False
-                    text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], self.obstaclePos[2])
+                    text = "{:.2f}, {:.2f}, {}".format(*self.obstaclePos, reliable)
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
-                    text = "{:.2f}, {:.2f}".format(math.degrees(self.obstaclePos[3]), self.obstaclePos[4])
+                    text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
         cv2.imshow('obstacle', obstacleMask)
 
@@ -175,40 +176,40 @@ class ImageAnalyser:
 
     def realCoordinates(self, cinfo, props):
         realAspect = props["dimensions"][0] / props["dimensions"][1]
-        angles = np.multiply(np.divide(cinfo["dimensions"], self.res), self.fov)
-        zValues = np.divide(props["dimensions"], np.tan(angles))
-        z = np.mean(zValues)
-
-        reliable = True
-        halfRes = np.multiply(self.res, 0.5)
         bottomY = cinfo["box"][1][1]
 
-        if (self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2:
-            reliable = False
-            vertAngle = self.tilt - ((bottomY - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
-            if vertAngle >= (math.pi / 2):
-                return None
-            z = self.camHeight * math.tan(vertAngle)
+        polar, cartesian = self.pointToCoordinates((cinfo["centroid"][0], bottomY))
+        xAngle, range = polar
+        x, z = cartesian
 
-        xAngle = (cinfo["centroid"][0] - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
-        x = z * math.tan(xAngle)
+        reliable = not ((self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2)
+        if reliable:
+            angles = np.multiply(np.divide(cinfo["dimensions"], self.res), self.fov)
+            zValues = np.divide(props["dimensions"], np.tan(angles))
+            z = np.mean(zValues)
+            x = z * math.tan(xAngle)
+            range = math.sqrt(x * x + z * z)
 
-        range = math.sqrt(x * x + z * z)
-
-        return x, z, reliable, xAngle, range
+        return (xAngle, range), (x, z), reliable
 
     def pointToCoordinates(self, point):
-        xout = None
-        zout = None
         halfRes = np.multiply(self.res, 0.5)
-        x, y = point
-        vertAngle = self.tilt - ((y - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
-        if vertAngle < (math.pi / 2):
-            zout = self.camHeight * math.tan(vertAngle)
+        xin, yin = point
+        vertAngle = self.tilt - ((yin - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
+        xAngle = (xin - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
 
-        xout = (x - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
+        if vertAngle >= (math.pi / 2):
+            x = None
+            z = None
+            range = None
+        else:
+            z = self.camHeight * math.tan(vertAngle)
+            x = z * math.tan(xAngle)
+            range = math.sqrt(x * x + z * z)
 
-        return xout, zout
+        polar = (xAngle, range)
+        cartesian = (x, z)
+        return polar, cartesian
 
 
     def ballThreshold(self, hsv):
