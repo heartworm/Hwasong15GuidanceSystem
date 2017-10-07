@@ -47,8 +47,6 @@ class ImageAnalyser:
 
         cv2.imshow('ball', ballMask)
 
-        # wallMask = self.wallThreshold(hsv)
-        # grassMask = self.grassThreshold(hsv)
 
         obstacleMask = self.obstacleThreshold(hsv)
         obstacleContours = self.findContours(np.array(obstacleMask))
@@ -72,8 +70,44 @@ class ImageAnalyser:
                     text = "{:.2f}, {:.2f}".format(math.degrees(self.obstaclePos[3]), self.obstaclePos[4])
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
         cv2.imshow('obstacle', obstacleMask)
-        # cv2.imshow('wall', wallMask)
-        # cv2.imshow('grass', grassMask)
+
+        grassMask = self.grassThreshold(hsv)
+        cv2.imshow('grass', grassMask)
+
+        wallMask = self.wallThreshold(hsv)
+
+        cv2.imshow('wall', wallMask)
+
+        wallBase = self.wallBase(grassMask, wallMask, distanceThreshold=5)
+        wallDisp = cv2.cvtColor(wallMask, cv2.COLOR_GRAY2BGR)
+        wallDisp[:,:,1] = np.maximum(wallDisp[:,:,1], grassMask)
+        for row,col in wallBase:
+            cv2.circle(wallDisp, (col, row), 2, (255,0,0))
+
+        wallBaseMask = np.zeros(np.shape(wallMask), dtype='uint8')
+        for row, col in wallBase:
+            wallBaseMask[row, col] = 255
+
+        cv2.imshow('wallbase', wallBaseMask)
+
+        lines = cv2.HoughLines(wallBaseMask, 1, math.radians(5), 30)
+        if lines is not None:
+            lines = np.squeeze(lines, axis=1)
+            for rho, theta in lines:
+                a = math.cos(theta)
+                b = math.sin(theta)
+                x0 = a*rho
+                y0 = b*rho
+                p0 = (int(round(x0 + 1000 * (-b))), int(round(y0 + 1000 * a)))
+                p1 = (int(round(x0 - 1000 * (-b))), int(round(y0 - 1000 * a)))
+                cv2.line(wallDisp, p0, p1, (0,0,255), 1)
+
+
+            # cv2.line(wallDisp, (x1,y1), (x2,y2), (0,0,255))
+
+        cv2.imshow('wallgrass', wallDisp)
+
+
         cv2.imshow('denoised', denoised)
         cv2.waitKey(1)
 
@@ -92,6 +126,16 @@ class ImageAnalyser:
 
         if text is not None:
             cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+
+    def wallBase(self, grassMask, wallMask, distanceThreshold):
+        dims = np.shape(grassMask)
+        basePoints = []
+        for col in range(dims[1]):
+            for row in range(dims[0]-1, 0, -1):
+                if grassMask[row, col] == 255 and grassMask[row-1, col] == 0:
+                    if np.max(wallMask[max(0, row-distanceThreshold):row, col]) == 255:
+                        basePoints.append((row, col))
+        return basePoints
 
     def contourInfo(self, contour):
         contourVec = np.reshape(contour, (-1, 2))
@@ -153,6 +197,19 @@ class ImageAnalyser:
 
         return x, z, reliable, xAngle, range
 
+    def pointToCoordinates(self, point):
+        xout = None
+        zout = None
+        halfRes = np.multiply(self.res, 0.5)
+        x, y = point
+        vertAngle = self.tilt - ((y - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
+        if vertAngle < (math.pi / 2):
+            zout = self.camHeight * math.tan(vertAngle)
+
+        xout = (x - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
+
+        return xout, zout
+
 
     def ballThreshold(self, hsv):
         ballLower = np.array([0, 100, 100])
@@ -161,8 +218,8 @@ class ImageAnalyser:
         return self.open(ballMask, 3)
 
     def grassThreshold(self, hsv):
-        ballLower = np.array([50, 0, 0])
-        ballUpper = np.array([100, 255, 255])
+        ballLower = np.array([50, 70, 0])
+        ballUpper = np.array([70, 255, 255])
         ballMask = cv2.inRange(hsv, ballLower, ballUpper)
         return self.open(ballMask, 9)
 
@@ -170,7 +227,7 @@ class ImageAnalyser:
         return cv2.morphologyEx(img, cv2.MORPH_OPEN, np.ones(kernelSize))
 
     def wallThreshold(self, hsv):
-        wallLower = np.array([0, 0, 190])
+        wallLower = np.array([0, 0, 128])
         wallUpper = np.array([255, 50, 255])
         wallMask = cv2.inRange(hsv, wallLower, wallUpper)
         return self.open(wallMask, 9)
