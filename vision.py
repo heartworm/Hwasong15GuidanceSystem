@@ -6,9 +6,9 @@ class ImageAnalyser:
     def __init__(self):
         # self.fov = np.array((math.radians(80), math.radians(50)))
         self.fov = np.array((math.radians(62.2), math.radians(48.8)))
-        self.tilt = math.radians(70)
+        self.tilt = math.radians(73.5)
         # self.camHeight = 0.21
-        self.camHeight = 0.17
+        self.camHeight = 0.15
         self.res = np.array((-1,-1))
         self.ballProps = {
             "dimensions": (0.0427, 0.0427)
@@ -58,19 +58,17 @@ class ImageAnalyser:
             obstacleInfos = [self.contourInfo(contour) for contour in obstacleContours]
             obstacleInfos = [info for info in obstacleInfos if info["area"] >= self.area * 0.01]
             obstacleInfos = sorted(obstacleInfos, key=areaGetter, reverse=True)
-            first = True
-            # for obstacleInfo in obstacleInfos:
             if len(obstacleInfos) > 0:
                 obstacleInfo = obstacleInfos[0]
                 polar, self.obstaclePos, reliable = self.realCoordinates(obstacleInfo, self.obstacleProps)
-                text = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
-                self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=text)
-                if first and self.obstaclePos[0] is not None:
-                    first = False
+                infoText = None
+                if polar[1] is not None:
+                    infoText = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
                     text = "{:.2f}, {:.2f}, {}".format(self.obstaclePos[0], self.obstaclePos[1], reliable)
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
                     text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
                     cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=infoText)
         cv2.imshow('obstacle', obstacleMask)
 
         grassMask = self.grassThreshold(hsv)
@@ -125,20 +123,18 @@ class ImageAnalyser:
             goalInfos = [self.contourInfo(contour) for contour in goalContours]
             goalInfos = [info for info in goalInfos if info["area"] >= self.area * 0.01]
             goalInfos = sorted(goalInfos, key=areaGetter, reverse=True)
-            first = True
-            # for obstacleInfo in obstacleInfos:
             if len(goalInfos) > 0:
                 goalInfo = goalInfos[0]
                 polar, self.goalPos, reliable = self.realCoordinates(goalInfo, self.goalProps)
-                text = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
-                self.drawContourInfo(denoised, goalInfo, color=(0,0,255), text=text)
-                if first and self.goalPos[0] is not None:
-                    first = False
+                infoText = None
+                if polar[1] is not None:
                     text = "{:.2f}, {:.2f}, {}".format(self.goalPos[0], self.goalPos[1], reliable)
                     cv2.putText(goalMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
                     text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
                     cv2.putText(goalMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                    infoText = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
 
+                self.drawContourInfo(denoised, goalInfo, color=(0,0,255), text=infoText)
 
         cv2.imshow('goals', goalMask)
 
@@ -162,18 +158,7 @@ class ImageAnalyser:
             cv2.putText(img, text, cinfo["box"][0], cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
     def wallBase(self, grassMask, wallMask, distanceThreshold):
-        dims = np.shape(grassMask)
         basePoints = []
-        perpAngle = (math.pi / 2) - self.tilt + (self.fov[1] / 2)
-        perpRow = (1 - (perpAngle / self.fov[1])) * self.res[1]
-        maxVert = min(max(0, int(perpRow)), self.res[1])
-        # for col in range(0, dims[1], stepSize):
-        #     for row in range(dims[0]-1, maxVert - 1, -stepSize):
-        #         if grassMask[row, col] == 255 and grassMask[row-1, col] == 0:
-        #             if np.max(wallMask[max(0, row-distanceThreshold):row, col]) == 255:
-        #                 basePoints.append((row, col))
-        #                 continue
-
         grassSobel = cv2.Sobel(grassMask, -1, 0, 1)
         edgeRows, edgeCols  = np.nonzero(grassSobel)
         for n in range(len(edgeRows)):
@@ -181,7 +166,6 @@ class ImageAnalyser:
             col = edgeCols[n]
             if np.max(wallMask[max(0, row-distanceThreshold):row, col]) == 255:
                 basePoints.append((row, col))
-
         return np.array(basePoints)
 
     def contourInfo(self, contour):
