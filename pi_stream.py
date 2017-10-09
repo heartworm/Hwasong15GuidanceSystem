@@ -3,6 +3,7 @@ import numpy as np
 from threading import Thread, Event
 from picamera.array import PiRGBArray
 from picamera import PiCamera
+from fractions import Fraction
 
 class PiStream:
     def __init__(self, resolution=(1280, 720), framerate=30):
@@ -13,6 +14,8 @@ class PiStream:
             self.camera.image_effect = 'denoise'
 
             self.camera.exposure_mode = 'fixedfps'
+            self.camera.awb_mode = 'off'
+            self.camera.awb_gains = (Fraction(1.3), Fraction(2.4))
 
             self.bgr_buffer = PiRGBArray(self.camera, size=resolution)
             self.frame_gen = self.camera.capture_continuous(self.bgr_buffer,

@@ -21,7 +21,7 @@ def gen_fps():
         fps_lasttime = newtime
         yield fps
 
-resolution = (320,240)
+resolution = (320, 240)
 
 with PiStream(resolution = resolution) as stream:
     fps = gen_fps()
