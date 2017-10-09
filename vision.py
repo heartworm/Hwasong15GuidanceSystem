@@ -50,6 +50,8 @@ class ImageAnalyser:
                 cv2.putText(ballMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
             else:
                 self.ballPos = None
+        else:
+            self.ballPos = None
 
         cv2.imshow('ball', ballMask)
 
@@ -145,6 +147,8 @@ class ImageAnalyser:
             else:
                 self.goalPos = None
             self.drawContourInfo(denoised, goalInfo, color=(0,255,0), text=infoText)
+        else:
+            self.goalPos = None
 
         cv2.imshow('goals', goalMask)
 

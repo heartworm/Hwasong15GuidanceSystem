@@ -6,6 +6,7 @@ from omni import Omni
 import numpy as np
 from vision import ImageAnalyser
 import time
+import ai
 
 print ('Program started')
 vrep.simxFinish(-1) # just in case, close all opened connections
@@ -29,12 +30,12 @@ if clientID != -1:
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             analyser.analyse(img)
 
-            print("Ball: ", analyser.ballPos)
-            print("Goal: ", analyser.goalPos)
-            print("Obstacle: ", analyser.obstaclePoses)
-            print("Wall: ", analyser.wallPoses)
+            # print("Ball: ", analyser.ballPos)
+            # print("Goal: ", analyser.goalPos)
+            # print("Obstacle: ", analyser.obstaclePoses)
+            # print("Wall: ", analyser.wallPoses)
 
-            
+            ai.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.goalPos, analyser.wallPoses)
 
             # if analyser.ballPos is not None:
             #     print(analyser.ballPos)

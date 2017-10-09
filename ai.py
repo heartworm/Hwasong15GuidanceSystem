@@ -9,8 +9,8 @@
 from itertools import zip_longest
 from PIL import Image
 from PIL import ImageTk
-from motor_controller import MotorController
-from communicator import Communicator
+# from motor_controller import MotorController
+# from communicator import Communicator
 from tkinter import *
 import time
 import math
@@ -23,12 +23,15 @@ import matplotlib.pyplot as plt
 #Primary State controller function, handles calling all 
 #other functions. RIP OOP
 #----------------------------------------------------------------
+
 def state_controller(ball, objects, goal,wall):
     #Set up parameters
     sub_state = ''
 
     state = determine_state(ball,objects,goal)
     print("Rolling with state number:",state)
+
+    desired_heading = 90
 
     if (state == 1): #State 1 (grabbing ball)
         #ball_ang, goal_ang, obj_ang = return_angles(ball_loc,goal_loc, obj_loc, robot_rot) 
@@ -43,9 +46,8 @@ def state_controller(ball, objects, goal,wall):
         elif (sub_state == 'moving_to_ball'):
             attract_field = create_attraction_field(ball)
             repulse_field = create_repulsion_field(objects)
-
             sum_field = attract_field - repulse_field 
-            desired_heading = sum_field.argmax(axis = 0)
+            desired_heading = sum_field.argmax(axis = 0) - 180
             #print(sum_field)
             #print('repulse field: ',repulse_field)
             print('heading towards: ',desired_heading)
@@ -57,7 +59,6 @@ def state_controller(ball, objects, goal,wall):
             #print(sum_field.size)
             print('----------------------------')
     elif (state == 2): #Aligning ball with goal
-
         #sub_state = determine_sub_state(ball,objects,goal,state) 
         if (sub_state ==  'Looking for Goal'):
             right_vel = -0.2
@@ -76,7 +77,7 @@ def state_controller(ball, objects, goal,wall):
         #print(sum_field.size)
         print('----------------------------')
     plot_state(ball,objects,goal,wall,desired_heading)
-    return right_vel, left_vel
+    return 0,0
 
 #----------------------------------------------------------------
 #Convers the given locations, and returns angles relative to the 
@@ -109,7 +110,7 @@ def determine_can_see(ball_ang,goal_ang,obj_ang):
 #----------------------------------------------------------------
 def create_attraction_field(ball):
     ball_ang_tup = ball[0]
-    ball_ang = math.degrees(ball_ang_tup[1])
+    ball_ang = math.degrees(ball_ang_tup[0])
     #Create field map
     ball_ang += 180
     ball_ang = int(ball_ang)
@@ -130,13 +131,14 @@ def create_attraction_field(ball):
 #----------------------------------------------------------------
 #
 def create_repulsion_field(objects):
+    print("REPULSION")
     #Initial set up
     robot_radius = 0.18/2
     rep_field = np.zeros((360,1))
     obj_width = 2 * robot_radius + 0.1
-    numberOfObjects = len(objects) - 1
+    numberOfObjects = len(objects)
     rep_field = np.zeros((360,1))
-    for i in range (1,numberOfObjects + 1):
+    for i in range (0,numberOfObjects):
         print("Creating repulse_field for object number:",i ,"Out of: ",numberOfObjects)
         obj = objects[i]
         objPol = obj[0]
@@ -168,39 +170,39 @@ def create_repulsion_field(objects):
 #Creates a repulsion based on both the wall location
 #and angle
 #----------------------------------------------------------------
-def create_repulsion_field(wall):
-    #Initial set up
-    robot_radius = 0.18/2
-    rep_field = np.zeros((360,1))
-    obj_width = 2 * robot_radius + 0.1
-    numberOfPoints = len(wall) 
-    rep_field = np.zeros((360,1))
-    for i in range (1,numberOfObjects + 1):
-        print("Creating repulse_field for object number:",i ,"Out of: ",numberOfObjects)
-        obj = objects[i]
-        objPol = obj[0]
-        print("objpol: ",objPol)
-        obj_dist = objPol[1]
-        obj_ang = math.degrees(objPol[0])
-        print("----------------------")
-        print("Object angle:",obj_ang,"distance: ",obj_dist)
-        print("----------------------")
-        if(obj_dist > 0.28):
-            obj_width_ang = int(math.degrees(math.asin(obj_width/obj_dist)))
-        else:
-            print('applying fix to unfuck the asin error')
-            obj_width_ang = 90
-
-        obj_ang_array = 180 + obj_ang
-        print('obj width angle is: ',obj_width_ang)
-
-        obj_effect = max(0, 1 - min(1, (obj_dist - robot_radius*2)))
-        print('creating repulsion_field, effect of the field is: ',obj_effect, 'angle is:', obj_ang)
-        for angle in range(0,int(obj_width_ang)):
-            rep_field[clip_angle_360(int(obj_ang_array - angle))] += max(rep_field[obj_width_ang - angle],obj_effect)
-            rep_field[clip_angle_360(int(obj_ang_array + angle))] += max(rep_field[obj_width_ang + angle],obj_effect)
-    #print(rep_field)
-    return rep_field
+# def create_repulsion_field(wall):
+#     #Initial set up
+#     robot_radius = 0.18/2
+#     rep_field = np.zeros((360,1))
+#     obj_width = 2 * robot_radius + 0.1
+#     numberOfPoints = len(wall)
+#     rep_field = np.zeros((360,1))
+#     for i in range (1,numberOfObjects + 1):
+#         print("Creating repulse_field for object number:",i ,"Out of: ",numberOfObjects)
+#         obj = objects[i]
+#         objPol = obj[0]
+#         print("objpol: ",objPol)
+#         obj_dist = objPol[1]
+#         obj_ang = math.degrees(objPol[0])
+#         print("----------------------")
+#         print("Object angle:",obj_ang,"distance: ",obj_dist)
+#         print("----------------------")
+#         if(obj_dist > 0.28):
+#             obj_width_ang = int(math.degrees(math.asin(obj_width/obj_dist)))
+#         else:
+#             print('applying fix to unfuck the asin error')
+#             obj_width_ang = 90
+#
+#         obj_ang_array = 180 + obj_ang
+#         print('obj width angle is: ',obj_width_ang)
+#
+#         obj_effect = max(0, 1 - min(1, (obj_dist - robot_radius*2)))
+#         print('creating repulsion_field, effect of the field is: ',obj_effect, 'angle is:', obj_ang)
+#         for angle in range(0,int(obj_width_ang)):
+#             rep_field[clip_angle_360(int(obj_ang_array - angle))] += max(rep_field[obj_width_ang - angle],obj_effect)
+#             rep_field[clip_angle_360(int(obj_ang_array + angle))] += max(rep_field[obj_width_ang + angle],obj_effect)
+#     #print(rep_field)
+#     return rep_field
 
 
 
@@ -265,14 +267,14 @@ def determine_sub_state(ball,objects,goal, state):
 #Used for determining states.
 #----------------------------------------------------------------
 def determine_state(ball,objects,goal):
-	
+    
     if ball is None:
-		return 1
-		
+        return 1
+        
     polar, cartesian, reliable = ball
-	bearing, range = polar
-		
-	if (math.fabs(bearing) >= 0.1 and range >= 0.1): 
+    bearing, range = polar
+    print("range", range)
+    if range >= 0.1:
         ##if the ballxz is greater than these
         #Then is is not seated in the dribbler, that must be corrected
         #Also, if the length of the ball tuple is 0, then obviously
@@ -288,49 +290,40 @@ def determine_state(ball,objects,goal):
 #----------------------------------------------------------------
 def plot_state(ball,objects,goal,wall,heading): 
 
-    ballxz = ball[1] #Extract the ball's xz location
-    print(ballxz)
-
-    numberOfObjects = len(objects)-1
-    print(numberOfObjects)
-    objectInLoopx = np.zeros((numberOfObjects,1))
-    objectInLoopz = np.zeros((numberOfObjects,1))
-    
-    wallpointscart = wall[1]
-    wallpoints = len(wallpointscart)
-    wallinloopx = np.zeros((int(wallpoints),1))
-    wallinloopz = np.zeros((int(wallpoints),1))
-
     heading_vect_length = 1
-    headingx = heading_vect_length * math.cos(math.radians(heading - 180))
-    headingy = heading_vect_length * math.sin(math.radians(heading - 180))
-    print(wallpoints)
+    headingx = heading_vect_length * math.cos(math.radians(90 - heading))
+    headingy = heading_vect_length * math.sin(math.radians(90 - heading))
     #print(wallpointscart)
 
-    for i in range(1,numberOfObjects+1):
-        objectInLoop = objects[i]
-        objectInLoopxz = objectInLoop[1]
-        objectInLoopx[i-1] = objectInLoopxz[0]
-        objectInLoopz[i-1] = objectInLoopxz[1]
-
-    for i in range(0,wallpoints):
-        wallinloopx[i] = wallpointscart[i,0]
-        wallinloopz[i] = wallpointscart[i,1]
-        pass
 
     #Format for py.plot: (x1x2x3),(y1y2y3)
     #print(objectInLoopx,objectInLoopz)
     #print(wallinloopx)
     print(headingx,headingy)
-	plt.cla()
-    plt.plot(ballxz[0],ballxz[1], 'ro')
-    plt.plot(objectInLoopx,objectInLoopz,'bo')
-    plt.plot(wallinloopx,wallinloopz,'go')
+    plt.cla()
+
+    if ball is not None:
+        _, ballxz, _ = ball
+        plt.plot(ballxz[0],ballxz[1], 'ro')
+
+    objectCart = [object[1] for object in objects]
+    objectX = [point[0] for point in objectCart]
+    objectZ = [point[1] for point in objectCart]
+    plt.plot(objectX, objectZ,'bo')
+
+    wallCart = [wallObj[1] for wallObj in wall]
+    wallX = [point[0] for point in wallCart]
+    wallZ = [point[1] for point in wallCart]
+    plt.plot(wallX, wallZ,'go')
+
+
     plt.plot([0,headingx],[0.,headingy])
     plt.title('Red = Ball, Blue = objects, Green = Goal')
-    plt.axis([-5, 5, -5, 5])
+    plt.axis([-2, 2, -2, 2])
     plt.grid(True)
-    plt.show()
+    plt.show(block=False)
+    plt.draw()
+    plt.pause(0.01)
 
 
 
