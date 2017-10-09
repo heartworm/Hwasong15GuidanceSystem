@@ -6,13 +6,6 @@
 
 #Structure -> CV -> State controller -> state -> pathfinding -> motor controller
 
-from itertools import zip_longest
-from PIL import Image
-from PIL import ImageTk
-# from motor_controller import MotorController
-# from communicator import Communicator
-from tkinter import *
-import time
 import math
 import numpy as np
 import matplotlib.pyplot as plt
