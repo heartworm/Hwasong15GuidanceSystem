@@ -90,6 +90,7 @@ class ImageAnalyser:
 
         if len(wallBase) > 0:
             self.wallPoses = [self.pointToCoordinates(point) for point in wallBase]
+            self.wallPoses = [(polar, cartesian, False) for polar, cartesian in self.wallPoses]
 
             closestInd = np.argmax(wallBase[:,1])
             closestPoint = tuple(wallBase[closestInd, :])
@@ -99,7 +100,8 @@ class ImageAnalyser:
 
             cv2.circle(wallDisp, closestPoint, 4, (255,0,255), 3)
             polar, cartesian = self.pointToCoordinates(closestPoint)
-            cv2.putText(wallDisp, "{}, {}".format(math.degrees(polar[0]), polar[1]),
+            if polar[1] is not None:
+                cv2.putText(wallDisp, "{:2f}, {:2f}".format(math.degrees(polar[0]), polar[1]),
                         (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255))
         else:
             self.wallPoses = []

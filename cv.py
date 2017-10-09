@@ -28,14 +28,22 @@ if clientID != -1:
             img = np.swapaxes(img, 0, 1)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             analyser.analyse(img)
-            if analyser.ballPos is not None:
-                print(analyser.ballPos)
-                code, actualPos = vrep.simxGetObjectPosition(clientID, ball, camera, vrep.simx_opmode_streaming)
-                if code == vrep.simx_return_ok:
-                    actualPos = actualPos[1:3]
-                    print("Actual:", actualPos)
-                    error = np.round(np.subtract(analyser.ballPos[0:2], actualPos) * 1000)
-                    print("Error (mm)", error)
-                time.sleep(0.5)
+
+            print("Ball: ", analyser.ballPos)
+            print("Goal: ", analyser.goalPos)
+            print("Obstacle: ", analyser.obstaclePoses)
+            print("Wall: ", analyser.wallPoses)
+
+            
+
+            # if analyser.ballPos is not None:
+            #     print(analyser.ballPos)
+            #     code, actualPos = vrep.simxGetObjectPosition(clientID, ball, camera, vrep.simx_opmode_streaming)
+            #     # if code == vrep.simx_return_ok:
+            #     #     actualPos = actualPos[1:3]
+            #     #     print("Actual:", actualPos)
+            #     #     error = np.round(np.subtract(analyser.ballPos[0:2], actualPos) * 1000)
+            #     #     print("Error (mm)", error)
+            #     time.sleep(0.5)
 
 cv2.destroyAllWindows()
