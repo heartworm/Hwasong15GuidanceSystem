@@ -6,16 +6,24 @@ from picamera import PiCamera
 from fractions import Fraction
 
 class PiStream:
-    def __init__(self, resolution=(1280, 720), framerate=30):
+    def __init__(self, resolution=(1280, 720), framerate=30, s901 = True):
         try:
             self.camera = PiCamera()
             self.camera.resolution = resolution
             self.camera.framerate = framerate
             self.camera.image_effect = 'denoise'
 
-            self.camera.exposure_mode = 'fixedfps'
-            self.camera.awb_mode = 'off'
-            self.camera.awb_gains = (Fraction(1.3), Fraction(2.4))
+
+            if s901:
+                self.camera.exposure_mode = 'fixedfps'
+                self.camera.awb_mode = 'off'
+                self.camera.awb_gains = (Fraction(1.3), Fraction(2.4))
+            else:
+                self.camera.exposure_mode = 'auto'
+                self.camera.awb_mode = 'off'
+                thingo = 1.1
+                self.camera.awb_gains = (Fraction(1.4   * thingo), Fraction(1.9 * thingo))
+
 
             self.bgr_buffer = PiRGBArray(self.camera, size=resolution)
             self.frame_gen = self.camera.capture_continuous(self.bgr_buffer,

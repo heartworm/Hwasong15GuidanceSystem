@@ -23,7 +23,7 @@ def gen_fps():
 
 resolution = (320, 240)
 
-with PiStream(resolution = resolution) as stream:
+with PiStream(resolution = resolution, s901 = True) as stream:
     fps = gen_fps()
     while showVideo:
         img = stream.get_frame()
