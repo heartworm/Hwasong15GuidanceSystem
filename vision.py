@@ -271,7 +271,7 @@ class ImageAnalyser:
     def obstacleThreshold(self, hsv):
         # obstacleLower = np.array([0, 200, 0])
         obstacleLower = np.array([0, 0, 0])
-        obstacleUpper = np.array([30, 255, 20])
+        obstacleUpper = np.array([30, 255, 25])
         obstacleMask = cv2.inRange(hsv, obstacleLower, obstacleUpper)
         return self.open(obstacleMask, 9)
 
