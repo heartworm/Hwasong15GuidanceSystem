@@ -1,7 +1,7 @@
 fov:
-    - 62.2
-    - 48.8
-tilt: 73.5
+    - 1.085595
+    - 0.8517207
+tilt: 1.282817
 camHeight: 0.15
 ballProps:
     dimensions:
