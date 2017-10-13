@@ -5,13 +5,10 @@ import math
 #CamelCase is used for consistency with openCV styling
 
 class ImageAnalyser:
-    def __init__(self):
-        # self.fov = np.array((math.radians(80), math.radians(50)))
-        self.fov = np.array((math.radians(62.2) , math.radians(48.8)))
-        self.tilt = math.radians(73.5)
-        # self.camHeight = 0.21
-        self.camHeight = 0.15
+    def __init__(self, config):
+        self.config = config['vision']
         self.res = np.array((-1,-1))
+
         self.ballProps = {
             "dimensions": (0.0427, 0.0427)
         }
@@ -42,7 +39,7 @@ class ImageAnalyser:
         if len(ballContours) > 0:
             ballInfos = sorted([self.contourInfo(contour) for contour in ballContours], key=areaGetter, reverse=True)
             ballInfo = ballInfos[0]
-            self.ballPos = self.realCoordinates(ballInfo, self.ballProps)
+            self.ballPos = self.realCoordinates(ballInfo, self.config['properties']['ball'])
             polar, cartesian, reliable = self.ballPos
             if ballInfo["area"] >= self.area * 0.0001 and cartesian[0] is not None:
                 self.drawContourInfo(denoised, ballInfo, color=(255,0,255))
@@ -66,7 +63,7 @@ class ImageAnalyser:
         self.obstaclePoses = []
 
         for obstacleInfo in obstacleInfos:
-            pos = self.realCoordinates(obstacleInfo, self.obstacleProps)
+            pos = self.realCoordinates(obstacleInfo, self.config['properties']['obstacle'])
             polar, cartesian, reliable = pos
 
             infoText = None
@@ -127,6 +124,7 @@ class ImageAnalyser:
                 cv2.line(wallDisp, p0, p1, (0,0,255), 1)
 
         cv2.imshow('wallgrass', wallDisp)
+        self.wallDisp = cv2.cvtColor(wallDisp, cv2.COLOR_BGR2RGB)
 
         goalMask = self.goalThreshold(hsv)
 
@@ -137,7 +135,7 @@ class ImageAnalyser:
         goalInfos = sorted(goalInfos, key=areaGetter, reverse=True)
         if len(goalInfos) > 0:
             goalInfo = goalInfos[0]
-            self.goalPos = self.realCoordinates(goalInfo, self.goalProps)
+            self.goalPos = self.realCoordinates(goalInfo, self.config['properties']['goal'])
             polar, cartesian, reliable = self.goalPos
             infoText = None
             if polar[1] is not None:
@@ -237,7 +235,7 @@ class ImageAnalyser:
 
         reliable = not ((self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2)
         if reliable:
-            angles = np.multiply(np.divide(cinfo["dimensions"], self.res), self.fov)
+            angles = np.multiply(np.divide(cinfo["dimensions"], self.res), self.config['fov'])
             zValues = np.divide(props["dimensions"], np.tan(angles))
             z = np.mean(zValues)
             x = z * math.tan(xAngle)
@@ -248,15 +246,15 @@ class ImageAnalyser:
     def pointToCoordinates(self, point):
         halfRes = np.multiply(self.res, 0.5)
         xin, yin = point
-        vertAngle = self.tilt - ((yin - halfRes[1]) / halfRes[1] * (self.fov[1] / 2))
-        xAngle = (xin - halfRes[0]) / halfRes[0] * (self.fov[0] / 2)
+        vertAngle = self.config['camTilt'] - ((yin - halfRes[1]) / halfRes[1] * (self.config['fov'][1] / 2))
+        xAngle = (xin - halfRes[0]) / halfRes[0] * (self.config['fov'][0] / 2)
 
         if vertAngle >= (math.pi / 2):
             x = None
             z = None
             range = None
         else:
-            z = self.camHeight * math.tan(vertAngle)
+            z = self.config['camHeight'] * math.tan(vertAngle)
             x = z * math.tan(xAngle)
             range = math.sqrt(x * x + z * z)
 
@@ -266,42 +264,30 @@ class ImageAnalyser:
 
 
     def ballThreshold(self, hsv):
-        ballLower = np.array([0, 100, 100])
-        ballUpper = np.array([15, 255, 255])
-        ballMask = cv2.inRange(hsv, ballLower, ballUpper)
-        return self.open(ballMask, 3)
+        return self.threshold(hsv, 'ball')
 
     def grassThreshold(self, hsv):
-        ballLower = np.array([40, 30, 25])
-        ballUpper = np.array([60, 255, 255])
-        ballMask = cv2.inRange(hsv, ballLower, ballUpper)
-        return self.open(ballMask, 9)
+        return self.threshold(hsv, 'grass')
 
     def open(self, img, kernelSize):
         return cv2.morphologyEx(img, cv2.MORPH_OPEN, np.ones(kernelSize))
 
     def wallThreshold(self, hsv):
-        wallLower = np.array([0, 0, 100])
-        wallUpper = np.array([255, 50, 255])
-        wallMask = cv2.inRange(hsv, wallLower, wallUpper)
-        return self.open(wallMask, 9)
+        return self.threshold(hsv, 'wall')
 
     def obstacleThreshold(self, hsv):
-        # obstacleLower = np.array([0, 200, 0])
-        obstacleLower = np.array([0, 0, 0])
-        obstacleUpper = np.array([30, 255, 25])
-        obstacleMask = cv2.inRange(hsv, obstacleLower, obstacleUpper)
-        return self.open(obstacleMask, 9)
+        return self.threshold(hsv, 'obstacle')
 
     def goalThreshold(self, hsv):
-        blueLower = np.array([95, 128, 63])
-        blueUpper = np.array([110, 255, 255])
-        yellowLower = np.array([22, 110, 110])
-        yellowUpper = np.array([33, 255, 255])
-        blueMask = cv2.inRange(hsv, blueLower, blueUpper)
-        yellowMask = cv2.inRange(hsv, yellowLower, yellowUpper)
+        blueMask = self.threshold(hsv, 'blueGoal')
+        yellowMask = self.threshold(hsv, 'yellowGoal')
         goalMask = np.maximum(blueMask, yellowMask)
         return self.open(goalMask, 9)
+
+    def threshold(self, hsv, name):
+        prefs = self.config['thresholds'][name]
+        mask = cv2.inRange(hsv, np.array(prefs['lower']), np.array(prefs['upper']))
+        return self.open(mask, prefs['kernel'])
 
     def ballBlobs(self, thresholded):
         ballDetectorParams = cv2.SimpleBlobDetector_Params()

@@ -1,11 +1,10 @@
-import cv2
-import numpy as np
 from threading import Thread, Event
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 from fractions import Fraction
+from stream import Stream
 
-class PiStream:
+class PiStream(Stream):
     def __init__(self, resolution=(1280, 720), framerate=30, s901 = True):
         try:
             self.camera = PiCamera()
@@ -68,6 +67,12 @@ class PiStream:
         self.frame_event.wait()
         self.frame_event.clear()
         return self.frame
+
+    def frames(self):
+        while self.frame_thread.is_alive() and not self.stop_flag:
+            self.frame_event.wait()
+            self.frame_event.clear()
+            yield self.frame
 
     def stop(self):
         self.__exit__()
