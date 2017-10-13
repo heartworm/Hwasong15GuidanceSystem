@@ -15,7 +15,7 @@ class PiStream:
 
 
             if s901:
-                self.camera.exposure_mode = 'auto'
+                self.camera.exposure_mode = 'fixedfps'
                 self.camera.awb_mode = 'off'
                 self.camera.awb_gains = (Fraction(1.3), Fraction(2.4))
             else:

@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import timeit
 from vision import ImageAnalyser
+import ai
 
 showVideo = True
 analyser = ImageAnalyser()
@@ -33,6 +34,8 @@ try:
             # cv2.putText(img, fps_str, (10, resolution[1] - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255,0,0))
             # cv2.imshow('videooutput', img)
             analyser.analyse(img)
+            ai.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.goalPos, analyser.wallPoses)
+
 except KeyboardInterrupt:
     print("quitting.")
 cap.release()

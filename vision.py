@@ -2,10 +2,12 @@ import cv2
 import numpy as np
 import math
 
+#CamelCase is used for consistency with openCV styling
+
 class ImageAnalyser:
     def __init__(self):
         # self.fov = np.array((math.radians(80), math.radians(50)))
-        self.fov = np.array((math.radians(62.2), math.radians(48.8)))
+        self.fov = np.array((math.radians(62.2) , math.radians(48.8)))
         self.tilt = math.radians(73.5)
         # self.camHeight = 0.21
         self.camHeight = 0.15

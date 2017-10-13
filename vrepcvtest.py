@@ -1,11 +1,7 @@
-#import required modules
 import vrep
-import pygame
 import cv2
-from omni import Omni
 import numpy as np
 from vision import ImageAnalyser
-import time
 import ai
 
 print ('Program started')
