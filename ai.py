@@ -65,6 +65,9 @@ def state_controller(ball, objects, goal,wall):
             left_vel = 0.2
         elif(sub_state == 'Found Goal'):
             attract_field = create_attraction_field(goal)
+            repulse_field = create_repulsion_field(objects)
+            sum_field = attract_field -repulse_field
+            desired_heading = sum_field.argmax(axis = 0) - 180
         
                 
         #print('repulse field: ',repulse_field)
@@ -170,39 +173,38 @@ def create_repulsion_field(objects):
 #Creates a repulsion based on both the wall location
 #and angle
 #----------------------------------------------------------------
-# def create_repulsion_field(wall):
+ def create_repulsion_field_wall(wall):
 #     #Initial set up
-#     robot_radius = 0.18/2
-#     rep_field = np.zeros((360,1))
-#     obj_width = 2 * robot_radius + 0.1
-#     numberOfPoints = len(wall)
-#     rep_field = np.zeros((360,1))
-#     for i in range (1,numberOfObjects + 1):
-#         print("Creating repulse_field for object number:",i ,"Out of: ",numberOfObjects)
-#         obj = objects[i]
-#         objPol = obj[0]
-#         print("objpol: ",objPol)
-#         obj_dist = objPol[1]
-#         obj_ang = math.degrees(objPol[0])
-#         print("----------------------")
-#         print("Object angle:",obj_ang,"distance: ",obj_dist)
-#         print("----------------------")
-#         if(obj_dist > 0.28):
-#             obj_width_ang = int(math.degrees(math.asin(obj_width/obj_dist)))
-#         else:
-#             print('applying fix to unfuck the asin error')
-#             obj_width_ang = 90
+     robot_radius = 0.18/2
+     rep_field = np.zeros((360,1))
+     obj_width = 0.001
+     numberOfPoints = len(wall)
+     rep_field = np.zeros((360,1))
+     for i in range (0,numberOfPoints):
+         print("Creating repulse_field for object number:",i ,"Out of: ",numberOfPoints)
+         wall_point = wall[i]
+         wallPol = wall_point[0]
+         print("wallpol: ",wallPol)
+         wall_dist= wallPol[1]
+         wall_ang = math.degrees(wallPol[0])
+         print("----------------------")
+         print("Object angle:",wall_ang,"distance: ",wall_dist)
+         print("----------------------")
+         if(wall_dist > 0.28):
+             wall_width_ang = int(math.degrees(math.asin(wall_width/wall_dist)))
+         else:
+             print('applying fix to unfuck the asin error')
+             wall_width_ang = 90
 #
-#         obj_ang_array = 180 + obj_ang
-#         print('obj width angle is: ',obj_width_ang)
-#
-#         obj_effect = max(0, 1 - min(1, (obj_dist - robot_radius*2)))
-#         print('creating repulsion_field, effect of the field is: ',obj_effect, 'angle is:', obj_ang)
-#         for angle in range(0,int(obj_width_ang)):
-#             rep_field[clip_angle_360(int(obj_ang_array - angle))] += max(rep_field[obj_width_ang - angle],obj_effect)
-#             rep_field[clip_angle_360(int(obj_ang_array + angle))] += max(rep_field[obj_width_ang + angle],obj_effect)
-#     #print(rep_field)
-#     return rep_field
+         wall_ang_array = 180 + wall_ang
+         print('wall width angle is: ',wall_width_ang)
+         wall_effect = max(0, 1 - min(1, (wall_dist - robot_radius*2)))
+         print('creating repulsion_field, effect of the field is: ',wall_effect, 'angle is:', wall_ang)
+         for angle in range(0,int(wall_width_ang)):
+             rep_field[clip_angle_360(int(wall_ang_array - angle))] += max(rep_field[wall_width_ang - angle],wall_effect)
+             rep_field[clip_angle_360(int(wall_ang_array + angle))] += max(rep_field[obj_width_ang + angle],wall_effect)
+      #print(rep_field)
+     return rep_field
 
 
 
