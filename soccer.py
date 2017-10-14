@@ -7,13 +7,25 @@ import yaml
 from io import BytesIO
 import json
 
+app = Flask(__name__)
+
 class Soccer:
+    singleton = None
+
+    @classmethod
+    def get_soccer(cls):
+        if cls.singleton is None:
+            cls.singleton = cls()
+        return cls.singleton
+
     def __init__(self):
         self.config = {}
         self.load_config()
         self.run_event = Event()
-        self.frame = None
         self.stop_flag = False
+        self.run_thread = None
+
+    def init(self):
         self.analyser = ImageAnalyser(self.config)
 
     def save_config(self):
@@ -62,29 +74,29 @@ class Soccer:
 
 
     def start(self):
-        self.stop_flag = False
-        self.run_thread = Thread(target=self.run)
-        self.run_thread.start()
+        if self.run_thread is None or not self.run_thread.is_alive():
+            self.stop_flag = False
+            self.init()
+            self.run_thread = Thread(target=self.run)
+            self.run_thread.start()
 
     def stop(self):
         self.stop_flag = True
         self.run_thread.join()
 
-    def jpeg_video(self):
+    def jpeg_video(self, video):
         while not self.stop_flag:
             self.run_event.wait()
             self.run_event.clear()
             io = BytesIO()
-            image = Image.fromarray(self.analyser.wallDisp)
+            image = Image.fromarray(self.analyser.videoStatus[video])
             image.save(io, format="JPEG")
             io.seek(0)
             yield io.getvalue()
 
+    def videos(self):
+        return list(self.analyser.videoStatus.keys())
 
-app = Flask(__name__)
-app.debug = True
-soccer = Soccer()
-soccer.start()
 
 def json_out(val):
     return make_response((json.dumps(val), 200, {'Content-Type': 'application/json'}))
@@ -93,21 +105,25 @@ def json_out(val):
 def index():
     return app.send_static_file('index.html')
 
-@app.route("/video")
+@app.route("/api/video")
 def video():
-    pass
+    return json_out(soccer.videos())
+
+@app.route("/api/video/<video>")
+def video_id(video):
+    try:
+        def multipart_jpeg():
+            for jpeg in soccer.jpeg_video(video):
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + jpeg + b'\r\n')
+        return Response(multipart_jpeg(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    except KeyError:
+        abort(404)
 
 
-@app.route("/video/<video_id>")
-def video_id():
-    def multipart_jpeg():
-        for jpeg in soccer.jpeg_video():
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + jpeg + b'\r\n')
-    return Response(multipart_jpeg(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-@app.route('/config/')
-@app.route('/config/<path:path>', methods=['GET', 'POST'])
+@app.route('/api/config/')
+@app.route('/api/config/<path:path>', methods=['GET', 'POST'])
 def config(path=''):
     if len(path) > 0:
         path = path.split("/")
@@ -124,13 +140,28 @@ def config(path=''):
     else:
         return json_out(out)
 
-@app.route('/save')
+@app.route('/api/save')
 def save():
     soccer.save_config()
+    return ''
 
-@app.route('/load')
+@app.route('/api/load')
 def load():
     soccer.load_config()
+    return ''
+
+@app.route('/api/start')
+def start():
+    soccer.start()
+    return ''
+
+@app.route('/api/stop')
+def stop():
+    soccer.stop()
+    return ''
+
 
 if __name__ == '__main__':
-    app.run()
+    soccer = Soccer.get_soccer()
+    soccer.init()
+    app.run(threaded=True, debug=True)

@@ -25,7 +25,11 @@ class ImageAnalyser:
         self.wallPoses = []
         self.obstaclePoses = []
 
+        self.videoStatus = {}
+
     def analyse(self, img):
+        self.imshow('img', img)
+
         self.res = np.array(np.shape(img)[1::-1], dtype='float')
         self.area = self.res[0] * self.res[1]
         denoised = self.denoiseRaw(img)
@@ -52,7 +56,8 @@ class ImageAnalyser:
         else:
             self.ballPos = None
 
-        cv2.imshow('ball', ballMask)
+        # cv2.imshow('ball', ballMask)
+        self.imshow('ball', ballMask)
 
         obstacleMask = self.obstacleThreshold(hsv)
         obstacleContours = self.findContours(np.array(obstacleMask))
@@ -76,12 +81,12 @@ class ImageAnalyser:
                 cv2.putText(obstacleMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
 
             self.drawContourInfo(denoised, obstacleInfo, color=(0,0,255), text=infoText)
-        cv2.imshow('obstacle', obstacleMask)
+
+        self.imshow('obstacle', obstacleMask)
 
         grassMask = self.grassThreshold(hsv)
 
         wallMask = self.wallThreshold(hsv)
-
 
         wallBase = self.wallBase(grassMask, wallMask, distanceThreshold=5)
 
@@ -123,9 +128,8 @@ class ImageAnalyser:
                 p1 = (int(round(x0 - 1000 * (-b))), int(round(y0 - 1000 * a)))
                 cv2.line(wallDisp, p0, p1, (0,0,255), 1)
 
-        cv2.imshow('wallgrass', wallDisp)
-        self.wallDisp = cv2.cvtColor(wallDisp, cv2.COLOR_BGR2RGB)
-
+        # cv2.imshow('wallgrass', wallDisp)
+        self.imshow('wallgrass', wallDisp)
         goalMask = self.goalThreshold(hsv)
 
         goalContours = self.findContours(np.array(goalMask))
@@ -150,10 +154,10 @@ class ImageAnalyser:
         else:
             self.goalPos = None
 
-        cv2.imshow('goals', goalMask)
+        self.imshow('goals', goalMask)
 
-        cv2.imshow('denoised', denoised)
-        cv2.waitKey(1)
+    def imshow(self, name, img):
+        self.videoStatus[name] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     def clean(self, img):
         cv2.destroyAllWindows()

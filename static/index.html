@@ -5,13 +5,29 @@
         <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="/static/css/main.css">
+        <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/grids-responsive-min.css">
     </head>
     <body>
         <div id="app" class="pure-g">
             <h1 class="pure-u-1">Hwasong15 Glorious Interface</h1>
-            <config name="Configuration" class="pure-u-1" path="/"></config>
+            <button v-on:click="start" v-bind:disabled="started" class="pure-button">Start</button>
+            <button v-on:click="stop" v-bind:disabled="!started" class="pure-button">Stop</button>
+            <div v-if='started' class="pure-u-1">
+                <div class="pure-g">
+                    <h2 class="pure-u-1">Videos</h2>
+                    <videos class="pure-u-1"></videos>
+                </div>
+            </div>
+            <div class="pure-u-1">
+                <h2>Configuration</h2>
+                <config name="Root" class="pure-u-1" path="/"></config>
+            </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+        <script src="/static/js/videos.js"></script>
+        <script src="/static/js/config.js"></script>
         <script src="/static/js/main.js"></script>
+
     </body>
 </html>
