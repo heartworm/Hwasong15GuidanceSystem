@@ -16,20 +16,24 @@ import time
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+search_counter = 0
+virt_ball = 180
 
 #TODO: Finish search algorithm
 #Change objects to obstacles
 #----------------------------------------------------------------
 #Primary State controller function, handles calling all 
 #other functions. RIP OOP
-#----------------------------------------------------------------
-
+#---------------------------------------------------------------
 def state_controller(ball, objects, goal,wall):
     #Set up parameters
     sub_state = ''
+    global search_counter
+    global virt_ball 
 
     state = determine_state(ball,objects,goal)
-    print("Rolling with state number:",state)
+    print("Rolling with state number:",state,"Counter value is:",search_counter)
 
     desired_heading = 90
 
@@ -41,9 +45,25 @@ def state_controller(ball, objects, goal,wall):
         sub_state = determine_sub_state(ball,objects,goal, state)
         print('state is:',state,'sub_state is:',sub_state)
         if (sub_state == 'finding_ball'):
-            right_vel = -0.2
-            left_vel = 0.2
+            #Generate a random ball location
+            if search_counter >= 20 and search_counter <= 30:
+                print("Spinning on point, search counter:",search_counter)
+                search_counter +=1
+                #INSERT CODE TO PERFORM 360 DEGREE SPIN
+            elif search_counter >= 30 or search_counter == 0:
+                virt_ball = generate_virtual_ball()
+                search_counter = 1
+                print('Searching for ball, placing virtual ball at:',virt_ball)
+            else:
+                print("Moving towards virtual ball at heading:", virt_ball)
+                search_counter +=1
+                attract_field = create_attraction_field(virt_ball)
+                repulse_field = create_repulsion_field(objects)
+                sum_field = attract_field - repulse_field 
+                desired_heading = sum_field.argmax(axis = 0) - 180
+                print('heading towards: ',desired_heading)
         elif (sub_state == 'moving_to_ball'):
+            search_counter = 0;
             attract_field = create_attraction_field(ball)
             repulse_field = create_repulsion_field(objects)
             sum_field = attract_field - repulse_field 
@@ -79,7 +99,7 @@ def state_controller(ball, objects, goal,wall):
         #plt.show()
         #print(sum_field.size)
         print('----------------------------')
-    plot_state(ball,objects,goal,wall,desired_heading)
+    plot_state(ball,objects,goal,wall,desired_heading,virt_ball)
     return 0,0
 
 #----------------------------------------------------------------
@@ -173,7 +193,7 @@ def create_repulsion_field(objects):
 #Creates a repulsion based on both the wall location
 #and angle
 #----------------------------------------------------------------
- def create_repulsion_field_wall(wall):
+def create_repulsion_field_wall(wall):
 #     #Initial set up
      robot_radius = 0.18/2
      rep_field = np.zeros((360,1))
@@ -286,11 +306,25 @@ def determine_state(ball,objects,goal):
         state = 2
     return state
 
+#----------------------------------------------------------------
+#Generate a random location for the ball
+#----------------------------------------------------------------
+def generate_virtual_ball():
+    #Create ball at random angle (0-360), at distance 0.5, 
+    vball_abs_dist = 0.5
+    vball_ang_deg = random.randint(0, 360) - 180
+    vball_ang_rad = math.radians(vball_ang_deg)
+    vball_pol = (vball_ang_rad,vball_abs_dist)
+    vballxy = (vball_abs_dist*math.cos(vball_ang_rad),vball_abs_dist*math.sin(vball_ang_rad))
+    vball = (vball_pol,vballxy,True)
+    return vball
+
+ 
 
 #----------------------------------------------------------------
 #Plot the state
 #----------------------------------------------------------------
-def plot_state(ball,objects,goal,wall,heading): 
+def plot_state(ball,objects,goal,wall,heading,vball): 
 
     heading_vect_length = 1
     headingx = heading_vect_length * math.cos(math.radians(90 - heading))
@@ -307,6 +341,11 @@ def plot_state(ball,objects,goal,wall,heading):
     if ball is not None:
         _, ballxz, _ = ball
         plt.plot(ballxz[0],ballxz[1], 'ro')
+
+    if vball is not None:
+        _, vballxz, _ = vball
+        plt.plot(vballxz[0],vballxz[1], 'yo')
+
 
     objectCart = [object[1] for object in objects]
     objectX = [point[0] for point in objectCart]
