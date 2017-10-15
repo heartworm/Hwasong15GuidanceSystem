@@ -97,6 +97,22 @@ class Soccer:
     def videos(self):
         return list(self.analyser.videoStatus.keys())
 
+    def status(self):
+        out = {
+            'started': self.run_thread is not None and self.run_thread.is_alive(),
+            'data': None
+        }
+        if out['started']:
+            loop_ran = self.run_event.wait(timeout=1)
+            if loop_ran:
+                out['data'] = {
+                    'videos': list(self.analyser.videoStatus.keys()),
+                    'stats': {
+                        'cv': self.analyser.status
+                    }
+                }
+        return out
+
 
 def json_out(val):
     return make_response((json.dumps(val), 200, {'Content-Type': 'application/json'}))
@@ -104,6 +120,10 @@ def json_out(val):
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
+@app.route("/api/status")
+def status():
+    return json_out(soccer.status())
 
 @app.route("/api/video")
 def video():

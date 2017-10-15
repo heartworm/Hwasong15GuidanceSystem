@@ -26,6 +26,7 @@ class ImageAnalyser:
         self.obstaclePoses = []
 
         self.videoStatus = {}
+        self.status = {}
 
     def analyse(self, img):
         self.imshow('img', img)
@@ -155,6 +156,26 @@ class ImageAnalyser:
             self.goalPos = None
 
         self.imshow('goals', goalMask)
+        self.imshow('status', denoised)
+
+        self.status = {
+            'ballPos': self.coord_to_dict(self.ballPos),
+            'goalPos': self.coord_to_dict(self.goalPos),
+            'obstaclePoses': [self.coord_to_dict(obstaclePos) for obstaclePos in self.obstaclePoses],
+            'wallPoses': [self.coord_to_dict(wallPos) for wallPos in self.wallPoses]
+        }
+
+    def coord_to_dict(self, coord):
+
+        if coord is None:
+            return None
+
+        polar, cartesian, reliable = coord
+        return {
+            'polar': polar,
+            'cartesian': cartesian,
+            'reliable': reliable
+        }
 
     def imshow(self, name, img):
         self.videoStatus[name] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

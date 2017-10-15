@@ -1,37 +1,49 @@
 var app = new Vue({
     el: '#app',
     data: {
-        started: false,
         error: false,
+        status: null
     },
     methods: {
+        getStatus: function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/status");
+            xhr.responseType = "json";
+            xhr.onload = (e) => {
+                if (e.target.status == 200) {
+                    this.error = false;
+                    if (this.status == null) {
+                        this.status = e.target.response;
+                    } else {
+                        Object.assign(this.status, e.target.response);
+                    }
+                } else {
+                    this.onError(e);
+                }
+                window.setTimeout(this.getStatus, 250);
+            };
+            xhr.onerror = (e) => {
+                this.onError(e);
+            }
+            xhr.send();
+        },
         start: function() {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "/api/start");
-            xhr.onload = (e) => {
-                if (e.target.status == 200) {
-                    this.started = true;
-                } else {
-                    console.log(e);
-                    this.error = true;
-                    this.started = false;
-                }
-            }
             xhr.send();
         },
         stop: function() {
            var xhr = new XMLHttpRequest();
             xhr.open("GET", "/api/stop");
-            xhr.onload = (e) => {
-                if (e.target.status == 200) {
-                    this.started = false;
-                } else {
-                    console.log(e);
-                    this.started = false;
-                    this.error = true;
-                }
-            }
             xhr.send();
+        },
+        onError: function(event) {
+            console.log(event);
+            this.started = false;
+            this.error = true;
         }
+    },
+    created: function() {
+        this.getStatus();
     }
 });

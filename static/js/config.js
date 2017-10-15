@@ -45,7 +45,6 @@ Vue.component('config', {
             xhr.open("GET", "/api/config" + this.path);
             xhr.responseType = "json";
             xhr.onload = (e) => {
-                
                 console.log(this);
                 if (!this.loaded) {
                     status = e.target.status;
