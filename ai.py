@@ -29,12 +29,9 @@ def state_controller(ball, objects, goal,wall):
     print("Rolling with state number:",state,"Counter value is:",search_counter)
 
     desired_heading = 90
+    velocity = 0 #Units for Velocity is m/s
 
     if (state == 1): #State 1 (grabbing ball)
-        #ball_ang, goal_ang, obj_ang = return_angles(ball_loc,goal_loc, obj_loc, robot_rot) 
-        #^Don't need, superseeded by dawries vision system
-        #see_b,see_g,see_obj = determine_can_see(ball_ang,goal_ang,obj_ang)
-        #Don't need to "Check" if we can see something
         sub_state = determine_sub_state(ball,objects,goal, state)
         print('state is:',state,'sub_state is:',sub_state)
         if (sub_state == 'finding_ball'):
@@ -43,57 +40,76 @@ def state_controller(ball, objects, goal,wall):
                 print("Spinning on point, search counter:",search_counter)
                 search_counter +=1
                 #INSERT CODE TO PERFORM 360 DEGREE SPIN
+                desired_heading = 270
+                velocity = 0
+
             elif search_counter >= 30 or search_counter == 0:
                 virt_ball = generate_virtual_ball()
                 search_counter = 1
                 print('Searching for ball, placing virtual ball at:',virt_ball)
+
             else:
                 print("Moving towards virtual ball at heading:", virt_ball)
                 search_counter +=1
                 attract_field = create_attraction_field(virt_ball)
-                repulse_field = create_repulsion_field(objects)
+                repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
                 sum_field = attract_field - repulse_field 
                 desired_heading = sum_field.argmax(axis = 0) - 180
-                print('heading towards: ',desired_heading)
+                velocity = 0.3
+                print('heading towards: ',desired_heading, "At velocity:",velocity)
+
         elif (sub_state == 'moving_to_ball'):
             search_counter = 0;
             attract_field = create_attraction_field(ball)
-            repulse_field = create_repulsion_field(objects)
+            repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
             sum_field = attract_field - repulse_field 
             desired_heading = sum_field.argmax(axis = 0) - 180
-            #print(sum_field)
-            #print('repulse field: ',repulse_field)
+            velocity = 0.3
             print('heading towards: ',desired_heading)
-            #right_vel,left_vel = motor_controller(desired_heading,ball_ang)
-            #print('left motor velocity:', left_vel,'right_motor_velocity',right_vel)
-            #plt.plot(sum_field)
-            #plt.ylabel('some numbers')
-            #plt.show()
-            #print(sum_field.size)
             print('----------------------------')
+
     elif (state == 2): #Aligning ball with goal
-        #sub_state = determine_sub_state(ball,objects,goal,state) 
         if (sub_state ==  'Looking for Goal'):
-            right_vel = -0.2
-            left_vel = 0.2
+            #Create a virtual goal location, move towards it
+            #Then do a spin to try and spot it.
+            if search_counter >= 20 and search_counter <= 30:
+                print("Spinning on point, looking for goal, search counter:",search_counter)
+                search_counter +=1
+                #INSERT CODE TO PERFORM 360 DEGREE SPIN
+                desired_heading = 270
+                velocity = 0
+
+            elif search_counter >= 30 or search_counter == 0:
+                virt_goal = generate_virtual_ball()
+                search_counter = 1
+                print('Searching for Goal, placing virtual goal at:',virt_goal)
+
+            else:
+                print("Moving towards virtual goal at heading:", goal)
+                search_counter +=1
+                attract_field = create_attraction_field(virt_goal)
+                repulse_field = create_repulsion_field(objects)
+                sum_field = attract_field - repulse_field 
+                desired_heading = sum_field.argmax(axis = 0) - 180
+                velocity = 0.3
+                print('heading towards: ',desired_heading, "At velocity:",velocity)
+
+
         elif(sub_state == 'Found Goal'):
+            search_counter = 0
             attract_field = create_attraction_field(goal)
-            repulse_field = create_repulsion_field(objects)
+            repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
             sum_field = attract_field -repulse_field
             desired_heading = sum_field.argmax(axis = 0) - 180
+            velocity = 0.3
         
-                
-        #print('repulse field: ',repulse_field)
-        #print('heading towards: ',desired_heading)
-        #right_vel,left_vel = motor_controller(desired_heading,ball_ang)
-        #print('left motor velocity:', left_vel,'right_motor_velocity',right_vel)
-        #plt.plot(sum_field)
-        #plt.ylabel('some numbers')
-        #plt.show()
-        #print(sum_field.size)
         print('----------------------------')
     plot_state(ball,objects,goal,wall,desired_heading,virt_ball)
-    return 0,0
+    return (math.radians(desired_heading - 90),velocity)
+    #May not work right if we are subctracting 90 from the heading
+    #If shit doesn't work, start by changing this
+    #return (math.radians(desired_heading),velocity)
+
 
 #----------------------------------------------------------------
 #Convers the given locations, and returns angles relative to the 
@@ -191,6 +207,7 @@ def create_repulsion_field_wall(wall):
      robot_radius = 0.18/2
      rep_field = np.zeros((360,1))
      obj_width = 0.001
+     field_amplitude = 0.2
      numberOfPoints = len(wall)
      rep_field = np.zeros((360,1))
      for i in range (0,numberOfPoints):
@@ -214,8 +231,8 @@ def create_repulsion_field_wall(wall):
          wall_effect = max(0, 1 - min(1, (wall_dist - robot_radius*2)))
          print('creating repulsion_field, effect of the field is: ',wall_effect, 'angle is:', wall_ang)
          for angle in range(0,int(wall_width_ang)):
-             rep_field[clip_angle_360(int(wall_ang_array - angle))] += max(rep_field[wall_width_ang - angle],wall_effect)
-             rep_field[clip_angle_360(int(wall_ang_array + angle))] += max(rep_field[obj_width_ang + angle],wall_effect)
+             rep_field[clip_angle_360(int(wall_ang_array - angle))] += max(rep_field[wall_width_ang - angle],wall_effect) * field_amplitude
+             rep_field[clip_angle_360(int(wall_ang_array + angle))] += max(rep_field[obj_width_ang + angle],wall_effect) * field_amplitude
       #print(rep_field)
      return rep_field
 
