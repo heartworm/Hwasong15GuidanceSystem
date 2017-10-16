@@ -18,7 +18,17 @@ Vue.component('positions', {
                 label: 'Walls',
                 data: [],
                 pointBackgroundColor: 'rgb(0,0,255)'
-            }
+            },
+            obstacles: {
+                label: 'Obstacles',
+                data: [],
+                pointBackgroundColor: 'rgb(65, 65, 65)'
+            },
+            goal: {
+                label: 'Goal',
+                data: [],
+                pointBackgroundColor: 'rgb(0,255,0)'
+            },
         };
     },
     methods: {
@@ -28,12 +38,26 @@ Vue.component('positions', {
                 var ballXY = this.toXY(this.positions.ballPos);
                 if (ballXY != null) this.ball.data.push(ballXY);
             }
+                      
+            this.goal.data = [];
+            if (this.positions.goalPos != null) {
+                var goalXY = this.toXY(this.positions.goalPos);
+                if (goalXY != null) this.goal.data.push(goalXY);
+            }
             
             this.walls.data = [];
             for (point of this.positions.wallPoses) {
                 var xy = this.toXY(point);
                 if (xy != null) {
                     this.walls.data.push(xy);
+                }
+            }
+            
+            this.obstacles.data = [];
+            for (point of this.positions.obstaclePoses) {
+                var xy = this.toXY(point);
+                if (xy != null) {
+                    this.obstacles.data.push(xy);
                 }
             }
             this.chart.update();
@@ -77,6 +101,8 @@ Vue.component('positions', {
                 datasets: [
                     this.ball,
                     this.walls,
+                    this.obstacles,
+                    this.goal
                 ]
             },
             options: {

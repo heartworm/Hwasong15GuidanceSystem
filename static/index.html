@@ -18,7 +18,7 @@
                 <div class="pure-g">
                     <button v-on:click="start" v-bind:disabled="status.started" class="pure-button pure-u-1 pure-u-lg-1-2">Start</button>
                     <button v-on:click="stop" v-bind:disabled="!status.started" class="pure-button pure-u-1 pure-u-lg-1-2">Stop</button>
-                    <div v-if="status.data" class="pure-g">
+                    <div v-if="status.started && status.data" class="pure-g">
                         <h2 class="pure-u-1">Videos</h2>
                         <div class="pure-u-1">
                             <videos v-bind:videos="status.data.videos" class="pure-g"></videos>

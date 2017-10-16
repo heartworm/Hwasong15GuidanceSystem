@@ -5,7 +5,7 @@ from fractions import Fraction
 from stream import Stream
 
 class PiStream(Stream):
-    def __init__(self, resolution=(1280, 720), framerate=30, s901 = True):
+    def __init__(self, resolution=(160, 120), framerate=30, s901 = True):
         try:
             self.camera = PiCamera()
             self.camera.resolution = resolution

@@ -10,6 +10,8 @@ var app = new Vue({
             xhr.open("GET", "/api/status");
             xhr.responseType = "json";
             xhr.onload = (e) => {
+                console.log(e.target.response);
+                console.log(this.status);
                 if (e.target.status == 200) {
                     this.error = false;
                     if (this.status == null) {
@@ -21,6 +23,7 @@ var app = new Vue({
                     this.onError(e);
                 }
                 window.setTimeout(this.getStatus, 250);
+//                this.getStatus();
             };
             xhr.onerror = (e) => {
                 this.onError(e);

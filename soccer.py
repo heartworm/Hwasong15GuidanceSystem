@@ -2,6 +2,9 @@ from flask import Flask, make_response, request, abort, send_from_directory, sen
 from threading import Thread, Event
 from vision import ImageAnalyser
 from webcam_stream import WebcamStream
+from pi_stream import PiStream
+from time import sleep
+
 from PIL import Image
 import yaml
 from io import BytesIO
@@ -21,12 +24,15 @@ class Soccer:
     def __init__(self):
         self.config = {}
         self.load_config()
-        self.run_event = Event()
+        self.status_event = Event()
+        self.image_event = Event()
         self.stop_flag = False
         self.run_thread = None
 
     def init(self):
         self.analyser = ImageAnalyser(self.config)
+        self.status_event.clear()
+        self.image_event.clear()
 
     def save_config(self):
         with open('config.yaml', 'w') as yamlfile:
@@ -65,12 +71,13 @@ class Soccer:
             return cur
 
     def run(self):
-        with WebcamStream() as cam:
+        with PiStream() as cam:
             for frame in cam.frames():
                 if self.stop_flag:
                     return
                 self.analyser.analyse(frame)
-                self.run_event.set()
+                self.status_event.set()
+                self.image_event.set()
 
 
     def start(self):
@@ -86,8 +93,8 @@ class Soccer:
 
     def jpeg_video(self, video):
         while not self.stop_flag:
-            self.run_event.wait()
-            self.run_event.clear()
+            self.image_event.wait()
+            self.image_event.clear()
             io = BytesIO()
             image = Image.fromarray(self.analyser.videoStatus[video])
             image.save(io, format="JPEG")
@@ -100,10 +107,9 @@ class Soccer:
     def status(self):
         out = {
             'started': self.run_thread is not None and self.run_thread.is_alive(),
-            'data': None
         }
         if out['started']:
-            loop_ran = self.run_event.wait(timeout=1)
+            loop_ran = self.status_event.wait(timeout=1)
             if loop_ran:
                 out['data'] = {
                     'videos': list(self.analyser.videoStatus.keys()),
@@ -115,7 +121,12 @@ class Soccer:
 
 
 def json_out(val):
-    return make_response((json.dumps(val), 200, {'Content-Type': 'application/json'}))
+    return make_response((json.dumps(val), 200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': 0
+    }))
 
 @app.route('/')
 def index():
@@ -133,6 +144,7 @@ def video():
 def video_id(video):
     try:
         def multipart_jpeg():
+            sleep(0.01)
             for jpeg in soccer.jpeg_video(video):
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + jpeg + b'\r\n')
@@ -183,5 +195,9 @@ def stop():
 
 if __name__ == '__main__':
     soccer = Soccer.get_soccer()
-    soccer.init()
-    app.run(threaded=True, debug=True)
+    try:
+        soccer.init()
+        app.run(threaded=True, debug=True, host='192.168.69.1')
+    except KeyboardInterrupt:
+        soccer.stop()
+        exit()
