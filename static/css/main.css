@@ -1,0 +1,36 @@
+html {
+    height: 100%;
+    
+    background-image: url('https://images.pond5.com/north-korea-waving-flag-footage-012353354_prevstill.jpeg');
+    background-position: center;
+    background-size: 100% auto;
+    background-repeat: repeat-y;
+}
+
+body { 
+    max-width: 768px;
+    width: 100%;
+    margin: 0 auto;
+    height: 100%;
+}
+
+#app {
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.config__item {
+    list-style-type: none;
+    display: block; 
+    width: auto;
+}
+
+.videos__button {
+    padding: 0 10px;
+}
+
+.videos__img {
+    margin: 0 auto;
+}
+
+.button--

@@ -5,12 +5,8 @@
 from __future__ import division
 import time
 import math
-import sys
 import numpy as np
-
-# Import the PCA9685 module.
 import Adafruit_PCA9685
-
 
 # Uncomment to enable debug output.
 #import logging
@@ -44,11 +40,8 @@ while True:
 
     maxHz = 276 / 60.0
     maxWheelSpeed = maxHz * math.pi * 0.067
-
-
     desiredSpeed = float(sys.argv[1])
     desiredHeading = math.radians(float(sys.argv[2]))
-
     desiredVector = (desiredSpeed / maxWheelSpeed) * np.array((math.cos(desiredHeading), math.sin(desiredHeading)))
 
     R = 0.09

@@ -52,7 +52,7 @@ def state_controller(ball, objects, goal,wall):
                 print("Moving towards virtual ball at heading:", virt_ball)
                 search_counter +=1
                 attract_field = create_attraction_field(virt_ball)
-                repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
+                repulse_field = create_repulsion_field(objects)
                 sum_field = attract_field - repulse_field 
                 desired_heading = sum_field.argmax(axis = 0) - 180
                 velocity = 0.3
@@ -61,7 +61,7 @@ def state_controller(ball, objects, goal,wall):
         elif (sub_state == 'moving_to_ball'):
             search_counter = 0;
             attract_field = create_attraction_field(ball)
-            repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
+            repulse_field = create_repulsion_field(objects)
             sum_field = attract_field - repulse_field 
             desired_heading = sum_field.argmax(axis = 0) - 180
             velocity = 0.3
@@ -98,7 +98,7 @@ def state_controller(ball, objects, goal,wall):
         elif(sub_state == 'Found Goal'):
             search_counter = 0
             attract_field = create_attraction_field(goal)
-            repulse_field = create_repulsion_field(objects) + create_repulsion_field_wall(wall)
+            repulse_field = create_repulsion_field(objects)
             sum_field = attract_field -repulse_field
             desired_heading = sum_field.argmax(axis = 0) - 180
             velocity = 0.3

@@ -1,0 +1,106 @@
+camera: 
+    resolution: 
+        - 320
+        - 240
+    framerate: 30
+    image_effect: "denoise"
+    exposure_mode: "fixedfps"
+    awb_mode: "off"
+    awb_gains:
+        - 1.3
+        - 2.4
+vision:
+    fov:
+        - 1.085595
+        - 0.8517207
+    camTilt: 1.282817
+    camHeight: 0.15
+    properties:   
+        ball:
+            dimensions:
+                - 0.0427
+                - 0.0427
+        obstacle: 
+            dimensions: 
+                - 0.18 
+                - 0.225
+        goal: 
+            dimensions: 
+                - 0.7
+                - 0.225
+
+    thresholds: 
+        ball:
+            lower: 
+                - 0
+                - 100
+                - 100
+            upper: 
+                - 15
+                - 255
+                - 255
+            kernel: 9
+        grass:
+            lower:
+                - 40
+                - 30
+                - 25
+            upper:
+                - 60
+                - 255
+                - 255
+            kernel: 9
+        wall:
+            lower: 
+                - 0
+                - 0
+                - 100
+            upper: 
+                - 255
+                - 50
+                - 255
+            kernel: 9
+        yellowGoal:
+            lower: 
+                - 22
+                - 100
+                - 110
+            upper: 
+                - 33
+                - 255
+                - 255
+            kernel: 9
+        blueGoal:
+            lower:
+                - 95
+                - 128
+                - 63
+            upper:
+                - 110
+                - 255
+                - 255
+            kernel: 9
+        obstacle: 
+            lower:
+                - 0
+                - 0
+                - 0
+            upper: 
+                - 30
+                - 255
+                - 25
+            kernel: 9
+drive:
+    wheelHz: 4.6
+    wheelDiameter: 0.067
+    wheelR: 0.09
+    wheelPins:
+        - 
+            fwd: 2
+            rev: 1
+        - 
+            fwd: 14
+            rev: 15
+        - 
+            fwd: 13
+            rev: 12

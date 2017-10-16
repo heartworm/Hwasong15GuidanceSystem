@@ -1,0 +1,48 @@
+fov:
+    - 1.085595
+    - 0.8517207
+tilt: 1.282817
+camHeight: 0.15
+ballProps:
+    dimensions:
+        - 0.0427
+        - 0.0427
+obstacleProps: 
+    dimensions: 
+        - 0.18 
+        - 0.225
+goalProps: 
+    dimensions: 
+        - 0.7
+        - 0.225
+
+thresholds: 
+    ball:
+        lower: 
+            - 0
+            - 0
+            - 0
+        upper: 
+            - 0
+            - 0
+            - 0
+    wall:
+        lower: 
+            - 0
+            - 0
+            - 0
+        upper: 
+            - 0
+            - 0
+            - 0
+    goal:
+        lower: 
+            - 0
+            - 0
+            - 0
+        upper: 
+            - 0
+            - 0
+            - 0
+
+

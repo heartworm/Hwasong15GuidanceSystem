@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hwasong15</title>
+        <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/static/css/main.css">
+        <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/grids-responsive-min.css">
+    </head>
+    <body>
+        <div id="app" class="pure-g">
+            <h1 class="pure-u-1">Hwasong15 Glorious Interface</h1>
+            <div v-if='error' class="pure-u-1">
+                Error check console. 
+            </div>
+            <div v-if='status != null' class="pure-u-1">
+                <div class="pure-g">
+                    <button v-on:click="start" v-bind:disabled="status.started" class="pure-button pure-u-1 pure-u-lg-1-2">Start</button>
+                    <button v-on:click="stop" v-bind:disabled="!status.started" class="pure-button pure-u-1 pure-u-lg-1-2">Stop</button>
+                    <div v-if="status.data" class="pure-g">
+                        <h2 class="pure-u-1">Videos</h2>
+                        <div class="pure-u-1">
+                            <videos v-bind:videos="status.data.videos" class="pure-g"></videos>
+                        </div>
+                        <h2 class="pure-u-1">Data</h2>
+                        <h3 class="pure-u-1">Object Positions</h3>
+                        <div class="pure-u-1">
+                            <positions class="pure-g" v-bind:positions="status.data.stats.cv"></positions>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="pure-g">
+                <p class="pure-u-1">Connecting...</p>
+            </div>
+            <div class="pure-u-1">
+                <h2>Configuration</h2>
+                <config name="Root" class="pure-u-1" path="/"></config>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
+        <script src="/static/js/positions.js"></script>
+        <script src="/static/js/videos.js"></script>
+        <script src="/static/js/config.js"></script>
+        <script src="/static/js/main.js"></script>
+
+    </body>
+</html>
