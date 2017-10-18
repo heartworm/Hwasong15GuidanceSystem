@@ -88,6 +88,7 @@ Vue.component('positions', {
     },
     watch: {
         positions: function() {
+            console.log("watch");
             this.drawPositions();
         }
     },

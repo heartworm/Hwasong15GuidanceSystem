@@ -1,7 +1,7 @@
 html {
     height: 100%;
     
-    background-image: url('https://images.pond5.com/north-korea-waving-flag-footage-012353354_prevstill.jpeg');
+    background-image: url('/static/img/symbol_of_hope.jpeg');
     background-position: center;
     background-size: 100% auto;
     background-repeat: repeat-y;

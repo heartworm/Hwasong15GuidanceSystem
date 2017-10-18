@@ -112,22 +112,22 @@ class ImageAnalyser:
                         (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255))
         else:
             self.wallPoses = []
+        #
+        # wallBaseMask = np.zeros(np.shape(wallMask), dtype='uint8')
+        # for x, y in wallBase:
+        #     wallBaseMask[y, x] = 255
 
-        wallBaseMask = np.zeros(np.shape(wallMask), dtype='uint8')
-        for x, y in wallBase:
-            wallBaseMask[y, x] = 255
-
-        lines = cv2.HoughLines(wallBaseMask, 1, math.radians(5), 30)
-        if lines is not None:
-            lines = np.squeeze(lines, axis=1)
-            for rho, theta in lines:
-                a = math.cos(theta)
-                b = math.sin(theta)
-                x0 = a*rho
-                y0 = b*rho
-                p0 = (int(round(x0 + 1000 * (-b))), int(round(y0 + 1000 * a)))
-                p1 = (int(round(x0 - 1000 * (-b))), int(round(y0 - 1000 * a)))
-                cv2.line(wallDisp, p0, p1, (0,0,255), 1)
+        # lines = cv2.HoughLines(wallBaseMask, 1, math.radians(5), 30)
+        # if lines is not None:
+        #     lines = np.squeeze(lines, axis=1)
+        #     for rho, theta in lines:
+        #         a = math.cos(theta)
+        #         b = math.sin(theta)
+        #         x0 = a*rho
+        #         y0 = b*rho
+        #         p0 = (int(round(x0 + 1000 * (-b))), int(round(y0 + 1000 * a)))
+        #         p1 = (int(round(x0 - 1000 * (-b))), int(round(y0 - 1000 * a)))
+        #         cv2.line(wallDisp, p0, p1, (0,0,255), 1)
 
         # cv2.imshow('wallgrass', wallDisp)
         self.imshow('wallgrass', wallDisp)

@@ -1,14 +1,17 @@
 from flask import Flask, make_response, request, abort, send_from_directory, send_file, Response
 from threading import Thread, Event
 from vision import ImageAnalyser
-from webcam_stream import WebcamStream
-from pi_stream import PiStream
+from socket import gethostname
 from time import sleep
+import waitress
 
 from PIL import Image
 import yaml
 from io import BytesIO
 import json
+import ai
+
+RASPBERRY_PI = gethostname() == 'raspberrypi'
 
 app = Flask(__name__)
 
@@ -71,14 +74,25 @@ class Soccer:
             return cur
 
     def run(self):
-        with PiStream() as cam:
+        if RASPBERRY_PI:
+            from pi_stream import PiStream
+            stream = PiStream
+        else:
+            from webcam_stream import WebcamStream
+            stream = WebcamStream
+        with stream() as cam:
             for frame in cam.frames():
                 if self.stop_flag:
                     return
+
+                # CV ----------
                 self.analyser.analyse(frame)
                 self.status_event.set()
                 self.image_event.set()
 
+                #AI -------------
+                status = self.analyser.status
+                # ai_heading, ai_velocity = ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
 
     def start(self):
         if self.run_thread is None or not self.run_thread.is_alive():
@@ -197,7 +211,8 @@ if __name__ == '__main__':
     soccer = Soccer.get_soccer()
     try:
         soccer.init()
-        app.run(threaded=True, debug=True, host='192.168.69.1')
+        app.run(threaded=True, debug=True, host='0.0.0.0')
+        # waitress.serve(app, send_bytes=1000)
     except KeyboardInterrupt:
         soccer.stop()
         exit()
