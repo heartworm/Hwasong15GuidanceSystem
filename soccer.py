@@ -3,7 +3,7 @@ from threading import Thread, Event
 from vision import ImageAnalyser
 from socket import gethostname
 from time import sleep
-import waitress
+# import waitress
 
 from PIL import Image
 import yaml
@@ -205,7 +205,6 @@ def start():
 def stop():
     soccer.stop()
     return ''
-
 
 if __name__ == '__main__':
     soccer = Soccer.get_soccer()

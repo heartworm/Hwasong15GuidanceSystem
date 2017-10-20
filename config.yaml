@@ -95,12 +95,14 @@ drive:
     wheelDiameter: 0.067
     wheelR: 0.09
     wheelPins:
+        -
+            fwd: 15
+            rev: 14
+        -
+            fwd: 1
+            rev: 2
         - 
-            fwd: 2
-            rev: 1
-        - 
-            fwd: 14
-            rev: 15
-        - 
+#            fwd: 13
+#            rev: 12
             fwd: 13
             rev: 12
