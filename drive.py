@@ -10,11 +10,7 @@ class Drive:
 
     def omni(self, speed, heading, alpha):
         heading = math.radians(heading)
-        # max_wheel_speed = self.config['wheelHz'] * math.pi * self.config['wheelDiameter']
-        # R = self.config['wheelR']
 
-
-        # desired_vector = (speed / max_wheel_speed) * np.array((math.cos(heading), math.sin(heading)))
         desired_vector = (speed) * np.array((math.cos(heading), math.sin(heading)))
 
         wheels = np.radians([120, 240, 0])

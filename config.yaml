@@ -106,3 +106,15 @@ drive:
 #            rev: 12
             fwd: 13
             rev: 12
+ai:
+    initHeading: 90
+    initVel: 0
+    fVel: 0.5
+    ballSearchMoveCount: 15
+    ballSearchSpinCount: 30
+    goalSearchMoveCount: 20
+    goalSearchSpinCount: 30
+    virtballturncount: 7
+    forwardVelocity: 0.5
+    rotationalVelocity: 10
+    distToGrab: 0.2

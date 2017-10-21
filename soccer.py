@@ -9,7 +9,7 @@ from PIL import Image
 import yaml
 from io import BytesIO
 import json
-import ai
+from ai import AI
 
 RASPBERRY_PI = gethostname() == 'raspberrypi'
 
@@ -34,6 +34,7 @@ class Soccer:
 
     def init(self):
         self.analyser = ImageAnalyser(self.config)
+        self.ai = AI(self.config)
         self.status_event.clear()
         self.image_event.clear()
 
@@ -91,8 +92,7 @@ class Soccer:
                 self.image_event.set()
 
                 #AI -------------
-                status = self.analyser.status
-                # ai_heading, ai_velocity = ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
+                self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
 
     def start(self):
         if self.run_thread is None or not self.run_thread.is_alive():
@@ -128,7 +128,8 @@ class Soccer:
                 out['data'] = {
                     'videos': list(self.analyser.videoStatus.keys()),
                     'stats': {
-                        'cv': self.analyser.status
+                        'cv': self.analyser.status,
+                        'ai': self.ai.status
                     }
                 }
         return out
