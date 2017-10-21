@@ -13,7 +13,7 @@ vision:
     fov:
         - 1.085595
         - 0.8517207
-    camTilt: 1.282817
+    camTilt: 1.2217304
     camHeight: 0.15
     properties:   
         ball:
@@ -39,7 +39,7 @@ vision:
                 - 15
                 - 255
                 - 255
-            kernel: 9
+            kernel: 3
         grass:
             lower:
                 - 40
@@ -101,20 +101,18 @@ drive:
         -
             fwd: 1
             rev: 2
-        - 
-#            fwd: 13
-#            rev: 12
+        -
             fwd: 13
             rev: 12
 ai:
     initHeading: 90
     initVel: 0
     fVel: 0.5
-    ballSearchMoveCount: 15
-    ballSearchSpinCount: 30
+    ballSearchMoveCount: 30
+    ballSearchSpinCount: 50
     goalSearchMoveCount: 20
     goalSearchSpinCount: 30
-    virtballturncount: 7
+    virtballturncount: 7.0
     forwardVelocity: 0.5
-    rotationalVelocity: 10
+    rotationalVelocity: 0.15
     distToGrab: 0.2

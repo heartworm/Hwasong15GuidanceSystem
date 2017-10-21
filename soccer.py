@@ -35,6 +35,11 @@ class Soccer:
     def init(self):
         self.analyser = ImageAnalyser(self.config)
         self.ai = AI(self.config)
+
+        if RASPBERRY_PI:
+            from drive import Drive
+            self.drive = Drive(self.config)
+
         self.status_event.clear()
         self.image_event.clear()
 
@@ -86,13 +91,26 @@ class Soccer:
                 if self.stop_flag:
                     return
 
-                # CV ----------
-                self.analyser.analyse(frame)
-                self.status_event.set()
-                self.image_event.set()
+                try:
 
-                #AI -------------
-                self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
+                    # CV ----------
+                    self.analyser.analyse(frame)
+                    self.status_event.set()
+                    self.image_event.set()
+
+                    #AI -------------
+                    self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
+
+                    ai_status = self.ai.status
+
+                    if RASPBERRY_PI:
+                        self.drive.omni(ai_status['desiredVelocity'], 90, ai_status['desiredRot'])
+                except:
+                    try:
+                        self.drive.wheels((0,0,0))
+                    except:
+                        pass
+                    raise
 
     def start(self):
         if self.run_thread is None or not self.run_thread.is_alive():
@@ -104,6 +122,9 @@ class Soccer:
     def stop(self):
         self.stop_flag = True
         self.run_thread.join()
+
+        if RASPBERRY_PI:
+            self.drive.wheels((0,0,0))
 
     def jpeg_video(self, video):
         while not self.stop_flag:

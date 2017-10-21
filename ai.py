@@ -10,6 +10,7 @@ import math
 import numpy as np
 # import matplotlib.pyplot as plt
 import random
+import time
 import cProfile
 import re 
 ####
@@ -28,11 +29,15 @@ class AI:
     def __init__(self, config):
         self.config = config['ai']
         self.search_counter = 0
-        self.virt_ball = 180
+        # self.virt_balls
         self.forward_vel = self.config['forwardVelocity']
         self.rotate_vel = self.config['rotationalVelocity']
-        self.virt_goal = 180
+        # self.virt_goal
         self.status = {}
+
+        self.virt_goal = self.generate_virtual_ball_infront()
+
+        self.virt_ball = self.generate_virtual_ball_infront()
 
        # 
     #----------------------------------------------------------------
@@ -154,12 +159,13 @@ class AI:
         print("State:",state,"Substate:",sub_state)
         #print(attract_field);
         desired_heading = np.clip(desired_heading,-90,90)
-        desired_rot = (desired_heading/90) 
+        desired_rot = (desired_heading/90.0)
+
         print("search counter:",self.search_counter)
         #print("DESIRED HEADING:",desired_rot)
         #self.plot_state(ball,objects,goal,wall,desired_heading,self.virt_balll)
         heading = 90
-        
+
         #Conversion shit for sim:
         desired_rot = desired_rot * -self.rotate_vel
         #print("movement:",vrep.simxGetObjectPosition(clientID, robot,-1, vrep.simx_opmode_blocking)[1])
@@ -173,9 +179,9 @@ class AI:
         #     plt.pause(0.01)
         self.status = {
             'state': state,
-            'substate': sub_state,
-            'desired_rot': float(desired_rot),
-            'desired_velocity': float(velocity)
+            'subState': sub_state,
+            'desiredRot': float(desired_rot),
+            'desiredVelocity': float(velocity)
         }
         #
         # return (desired_rot, velocity,state)
@@ -214,7 +220,7 @@ class AI:
        ballpol,_,_ = ball
        ramp = np.linspace(0, 1, num=180, endpoint=False)
        ramp = ramp[1:180]
-       base_field = np.concatenate([[1], np.flip(ramp, axis=0), [0], ramp])
+       base_field = np.concatenate([[1], np.flipud(ramp), [0], ramp])
        ball_ang = int(round(math.degrees(ballpol[0]) + 180)) % 360
        rotated_field = np.roll(base_field, ball_ang, axis=0)
        return np.reshape(rotated_field, (-1, 1))
