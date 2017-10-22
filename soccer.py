@@ -107,6 +107,12 @@ class Soccer:
                     self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, goal, self.analyser.wallPoses)
 
                     ai_status = self.ai.status
+                    #
+                    # if (ai_status['state']==1 and ai_status['subState'] == 'moving_to_ball') or ai_status['state'] == 2:
+                    #     self.drive.dribbler(1)
+                    # else:
+                    #     pass
+                    #     # self.drive.dribbler(0)
 
                     print(ai_status['desiredRot'])
 
@@ -116,6 +122,7 @@ class Soccer:
                 except:
                     try:
                         self.drive.wheels((0,0,0))
+                        self.drive.dribbler(0)
                     except:
                         pass
                     raise
@@ -133,6 +140,7 @@ class Soccer:
         self.run_thread.join()
 
         if RASPBERRY_PI:
+            self.drive.dribbler(0)
             self.drive.wheels((0,0,0))
 
     def jpeg_video(self, video):

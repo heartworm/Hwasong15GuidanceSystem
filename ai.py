@@ -189,6 +189,9 @@ class AI:
                 # velocity = self.forward_vel
                 velocity, desired_heading = self.field_master(goal, objects, wall, self.forward_vel)
 
+            elif self.sub_state == 'Shoot':
+                velocity = 0
+                desired_heading = 0
             
         # print('----------------------------')
         # print("State:",state,"Substate:",self.sub_state)
@@ -209,7 +212,7 @@ class AI:
 
         new_velocity = velocity * velocity_multiplier
         min_vel = 0.25
-        if abs(velocity) > 0.25 and abs(new_velocity) < 0.25:
+        if abs(velocity) >= min_vel and abs(new_velocity) < min_vel:
             if velocity < 0:
                 velocity = -min_vel
             else:
@@ -366,9 +369,12 @@ class AI:
                 sub_state = 'Looking for Goal'
                 # print('substate set to:', sub_state)
             else:
-                sub_state = 'Found Goal'
+                if self.config['shoot'] == 1 and goal[0][1] < self.config['shootDist'] and abs(goal[0][0]) < math.radians(self.config['shootAngle']):
+                    sub_state = 'Shoot'
+                else:
+                    sub_state = 'Found Goal'
                 self.last_goal_left = goal[0][0] < 0
-                # print('substate set to:', sub_state)
+                    # print('substate set to:', sub_state)
         return sub_state
 
     #----------------------------------------------------------------

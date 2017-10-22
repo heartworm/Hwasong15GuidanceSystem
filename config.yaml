@@ -119,3 +119,6 @@ ai:
     rotationalVelocity: 0.2
     distToGrab: 0.01
     objWidth: 0.15
+    shoot: 1
+    shootDist: 0.4
+    shootAngle: 7.5
