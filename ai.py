@@ -41,6 +41,8 @@ class AI:
         self.max_ang = config['vision']['fov'][0] / 2
         self.search_state = ''
         self.found_ball = False
+        self.last_ball_left = False
+        self.last_goal_left = False
         self.sum_field = []
 
     def ang_to_nang(self, ang):
@@ -59,22 +61,37 @@ class AI:
     def field_to_nang(self, field):
         nang_list = np.linspace(-1, 1, num=self.field_length, endpoint = True)
         field = np.reshape(field, (-1))
+        field = np.maximum(field, 0)
+        print("field", field)
+        print("sum", np.sum(field))
         center_of_mass = np.sum(np.multiply(nang_list, field)) / np.sum(field)
+
+        print("nang", center_of_mass)
 
         return center_of_mass
         # return self.ind_to_nang(field.argmax(axis=0))
 
     def field_master(self, good, obstacles, walls, velocity):
-
         attract_field = self.create_attraction_field(good)
-        repulsion_field = np.max((self.create_repulsion_field(obstacles), self.create_repulsion_field_wall(walls)), axis=0)
+
+        print("attraction", np.reshape(attract_field, (-1)))
+
+        # repulsion_field = np.maximum(self.create_repulsion_field(obstacles), self.create_repulsion_field_wall(walls))
+        repulsion_field = self.create_repulsion_field(obstacles)
+        repulsion_field *= 0.5
+
+        print("repulsion", np.reshape(repulsion_field, (-1)))
 
         sum_field = attract_field - repulsion_field
 
-        print (np.max(sum_field))
         self.sum_field = sum_field
 
+        if np.max(sum_field) <= 0.5:
+            print('obscured')
+            return 0, 1
+
         heading = self.field_to_nang(sum_field)
+        print("nang", heading)
         return velocity, heading
 
 
@@ -109,29 +126,22 @@ class AI:
             if (self.sub_state == 'finding_ball'):
                 elapsed_time = time.time() - self.search_start_time
                 # print('elapsed time: ', elapsed_time)
-                spin_time = self.config['virtballturncount']
-                move_time = spin_time + self.config['ballSearchMoveCount']
-                full_search_time = move_time + self.config['ballSearchSpinCount']
+
+                spin_time = self.config['ballSearchSpinCount']
+                full_search_time = spin_time + self.config['ballSearchMoveCount']
                 if last_sub_state != 'finding_ball' or elapsed_time >= full_search_time:
                     print('resetting search')
                     self.search_state = 'resetting'
-                    self.search_start_time = time.time() 
-                    self.virt_ball = self.generate_virtual_ball_random_loc()
-                    self.spin_speed = random.uniform(-1,1)
-                elif elapsed_time >= move_time: 
-                    print('spinning on spot')
-                    velocity = 0
-                    desired_heading = 1
-                    self.search_state = 'scanning'
+                    self.search_start_time = time.time()
                 elif elapsed_time >= spin_time:
                     print('moving forward')
                     self.search_state = 'moving'
                     velocity, desired_heading = self.field_master(None, objects, wall, self.forward_vel)
                 else:
-                    print('turning towards virtual ball')
+                    print('scanning')
                     self.search_state = 'turning'
                     velocity = 0
-                    desired_heading = self.spin_speed
+                    desired_heading = -1 if self.last_ball_left else 1
                     
             elif (self.sub_state == 'moving_to_ball'):
                 self.search_counter = 0
@@ -139,46 +149,27 @@ class AI:
                 # print('found ball heading towards: ',desired_heading)
                 #print('----------------------------')
         elif (state == 2): #Aligning ball with goal
-
+            last_sub_state = self.sub_state
             self.sub_state = self.determine_sub_state(ball,objects,goal, state)
             if (self.sub_state ==  'Looking for Goal'):
 
+                elapsed_time = time.time() - self.search_start_time
 
-
-                #Create a virtual goal location, move towards it
-                #Then do a spin to try and spot it.
-                if self.search_counter >= 20 and self.search_counter <= 30:
-                    print("Spinning on point, looking for goal, search counter:",self.search_counter)
-                    self.search_counter +=1
-                    #INSERT CODE TO PERFORM 360 DEGREE SPIN
-                    desired_heading = 1
-                    velocity = 0
-
-                elif self.search_counter >= 30 or self.search_counter == 0:
-                    self.virt_goal = self.generate_virtual_ball_infront()
-                    self.search_counter = 1
-                    print('Searching for Goal, placing virtual goal at:',self.virt_goal)    
-                
-                
-                elif (self.search_counter == self.config['virtballturncount']):
-                    self.virt_goal= self.generate_virtual_ball_infront()
-                    self.search_counter += 1
-                    print('Have finished turning for virt ball, now moving foward',self.virt_goal)
-                    velocity = self.forward_vel
-              
-
+                spin_time = self.config['goalSearchSpinCount']
+                full_search_time = spin_time + self.config['goalSearchMoveCount']
+                if last_sub_state != 'Looking for Goal' or elapsed_time >= full_search_time:
+                    print('resetting search')
+                    self.search_state = 'resetting'
+                    self.search_start_time = time.time()
+                elif elapsed_time >= spin_time:
+                    print('moving forward')
+                    self.search_state = 'moving'
+                    velocity, desired_heading = self.field_master(None, objects, wall, self.forward_vel)
                 else:
-                    print("Moving towards virtual goal at heading:", self.virt_goal)
-                    self.search_counter +=1
-                    # attract_field = self.create_attraction_field(self.virt_goal)
-                    # repulse_field = self.create_repulsion_field(objects) + self.create_repulsion_field_wall(wall)
-                    # sum_field = attract_field - repulse_field
-                    # desired_heading = self.field_to_nang(sum_field)
-                    # velocity = self.forward_vel
-
-                    velocity, desired_heading = self.field_master(self.virt_goal, objects, wall, self.forward_vel)
-                    #print('heading towards: ',desired_heading, "At velocity:",velocity)
-
+                    print('scanning')
+                    self.search_state = 'turning'
+                    velocity = 0
+                    desired_heading = -1 if self.last_goal_left else 1
 
             elif(self.sub_state == 'Found Goal'):
                 # print("found goal, moving towards it")
@@ -217,9 +208,9 @@ class AI:
         #     plt.show(block=False)
         #     plt.pause(0.01)
         #
-        if (state == 2):
-            desired_rot = 0
-            velocity = 0
+        # if (state == 2):
+        #     desired_rot = 0
+        #     velocity = 0
 
         self.status = {
             'state': state,
@@ -346,6 +337,7 @@ class AI:
                 sub_state = 'finding_ball'
                 #print(sub_state)
             else:
+                self.last_ball_left = ball[0][0] < 0
                 sub_state = 'moving_to_ball'
                 #print(sub_state)
         elif (state == 2): #Have ball in dribbler, align with the goal
@@ -354,6 +346,7 @@ class AI:
                 # print('substate set to:', sub_state)
             else:
                 sub_state = 'Found Goal'
+                self.last_goal_left = goal[0][0] < 0
                 # print('substate set to:', sub_state)
         return sub_state
 
@@ -361,14 +354,16 @@ class AI:
     #Used for determining states.
     #----------------------------------------------------------------
     def determine_state(self,ball,objects,goal):
-        
+        if self.found_ball:
+            return 2
+
         if ball is None:
             return 1
             
         polar, cartesian, reliable = ball
         bearing, range = polar
 
-        if not self.found_ball and range >= self.config['distToGrab']:
+        if range >= self.config['distToGrab']:
             state = 1
         else:
             state = 2

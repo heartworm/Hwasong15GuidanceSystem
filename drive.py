@@ -29,13 +29,26 @@ class Drive:
 
     def wheels(self, powers):
         for wheel_num in range(3):
-            power = powers[wheel_num]
-            pwmVal = int(min(4095, max(0, abs(power) * 4095)))
-            print("Wheel ", wheel_num, "At: ", pwmVal)
-            pins = self.config['wheelPins'][wheel_num]
-            if power >= 0:
-                self.pwm.set_pwm(pins['fwd'], 0, pwmVal)
-                self.pwm.set_pwm(pins['rev'], 0, 0)
-            else:
-                self.pwm.set_pwm(pins['rev'], 0, pwmVal)
-                self.pwm.set_pwm(pins['fwd'], 0, 0)
+            self.power(self.config['wheelPins'][wheel_num], powers[wheel_num])
+            # power = powers[wheel_num]
+            # pwmVal = int(min(4095, max(0, abs(power) * 4095)))
+            # print("Wheel ", wheel_num, "At: ", pwmVal)
+            # pins = self.config['wheelPins'][wheel_num]
+            # if power >= 0:
+            #     self.pwm.set_pwm(pins['fwd'], 0, pwmVal)
+            #     self.pwm.set_pwm(pins['rev'], 0, 0)
+            # else:
+            #     self.pwm.set_pwm(pins['rev'], 0, pwmVal)
+            #     self.pwm.set_pwm(pins['fwd'], 0, 0)
+
+    def power(self, pins, power):
+        pwmVal = int(min(4095, max(0, abs(power) * 4095)))
+        if power >= 0:
+            self.pwm.set_pwm(pins['fwd'], 0, pwmVal)
+            self.pwm.set_pwm(pins['rev'], 0, 0)
+        else:
+            self.pwm.set_pwm(pins['rev'], 0, pwmVal)
+            self.pwm.set_pwm(pins['fwd'], 0, 0)
+
+    def dribbler(self, power):
+        self.power(self.config['dribblerPins'], power)

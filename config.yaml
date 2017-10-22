@@ -105,14 +105,17 @@ drive:
         -
             fwd: 13
             rev: 12
+    dribblerPins:
+        fwd: 3
+        rev: 4
 ai:
     initHeading: 0
     ballSearchMoveCount: 3
     ballSearchSpinCount: 10
-    goalSearchMoveCount: 2
+    goalSearchMoveCount: 3
     goalSearchSpinCount: 10
     virtballturncount: 3
-    forwardVelocity: 0.75
-    rotationalVelocity: 0.15
+    forwardVelocity: 0.5
+    rotationalVelocity: 0.2
     distToGrab: 0.01
     objWidth: 0.15

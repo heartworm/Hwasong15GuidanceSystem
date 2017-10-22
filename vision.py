@@ -46,8 +46,6 @@ class ImageAnalyser:
             ballInfo = ballInfos[0]
             self.ballPos = self.realCoordinates(ballInfo, self.config['properties']['ball'])
 
-            print(ballInfo["box"])
-            print(ballInfo["box"][0][1])
             if ballInfo["box"][0][1] > self.res[1] * self.config['dribblerMult']:
                 self.ballPos = ((self.ballPos[0][0],0.0),(0.0,0.0),False)
 
