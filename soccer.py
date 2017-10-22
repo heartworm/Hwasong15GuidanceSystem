@@ -98,13 +98,15 @@ class Soccer:
                     self.status_event.set()
                     self.image_event.set()
 
-                    # #AI -------------
-                    # self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
-                    #
-                    # ai_status = self.ai.status
-                    #
-                    # if RASPBERRY_PI:
-                    #     self.drive.omni(ai_status['desiredVelocity'], 90, ai_status['desiredRot'])
+                    #AI -------------
+                    self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
+
+                    ai_status = self.ai.status
+
+                    print(ai_status['desiredRot'])
+
+                    if RASPBERRY_PI:
+                        self.drive.omni(ai_status['desiredVelocity'], 90, ai_status['desiredRot'])
                 except:
                     try:
                         self.drive.wheels((0,0,0))

@@ -13,8 +13,9 @@ vision:
     fov:
         - 1.085595
         - 0.8517207
-    camTilt: 1.2217304
-    camHeight: 0.15
+    camTilt: 1.20
+    camHeight: 0.08
+    dribblerMult: 0.85
     properties:   
         ball:
             dimensions:
@@ -34,7 +35,7 @@ vision:
             lower: 
                 - 0
                 - 100
-                - 100
+                - 150
             upper: 
                 - 15
                 - 255
@@ -96,11 +97,11 @@ drive:
     wheelR: 0.09
     wheelPins:
         -
-            fwd: 15
-            rev: 14
-        -
             fwd: 1
             rev: 2
+        -
+            fwd: 15
+            rev: 14
         -
             fwd: 13
             rev: 12
@@ -108,9 +109,10 @@ ai:
     initHeading: 0
     ballSearchMoveCount: 3
     ballSearchSpinCount: 10
-    goalSearchMoveCount: 3
+    goalSearchMoveCount: 2
     goalSearchSpinCount: 10
     virtballturncount: 3
-    forwardVelocity: 0.5
+    forwardVelocity: 0.75
     rotationalVelocity: 0.15
-    distToGrab: 0.3
+    distToGrab: 0.01
+    objWidth: 0.15

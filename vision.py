@@ -45,7 +45,14 @@ class ImageAnalyser:
             ballInfos = sorted([self.contourInfo(contour) for contour in ballContours], key=areaGetter, reverse=True)
             ballInfo = ballInfos[0]
             self.ballPos = self.realCoordinates(ballInfo, self.config['properties']['ball'])
+
+            print(ballInfo["box"])
+            print(ballInfo["box"][0][1])
+            if ballInfo["box"][0][1] > self.res[1] * self.config['dribblerMult']:
+                self.ballPos = ((self.ballPos[0][0],0.0),(0.0,0.0),False)
+
             polar, cartesian, reliable = self.ballPos
+
             if ballInfo["area"] >= self.area * 0.0001 and cartesian[0] is not None:
                 self.drawContourInfo(denoised, ballInfo, color=(255,0,255))
                 text = "{:.2f}, {:.2f}, {}".format(cartesian[0], cartesian[1], reliable)
@@ -259,7 +266,7 @@ class ImageAnalyser:
         x, z = cartesian
 
         reliable = not ((self.res[1] - bottomY / self.res[1]) <= 0.01 or abs(realAspect - cinfo["aspect"]) >= 0.2)
-        if reliable:
+        if False and reliable:
             angles = np.multiply(np.divide(cinfo["dimensions"], self.res), self.config['fov'])
             zValues = np.divide(props["dimensions"], np.tan(angles))
             z = np.mean(zValues)

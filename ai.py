@@ -8,7 +8,7 @@
 
 import math
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import random
 import time
 import cProfile
@@ -39,6 +39,9 @@ class AI:
         self.field_length = self.field_num * 2 + 1
         self.field_cent = self.field_num
         self.max_ang = config['vision']['fov'][0] / 2
+        self.search_state = ''
+        self.found_ball = False
+        self.sum_field = []
 
     def ang_to_nang(self, ang):
         return ang / self.max_ang
@@ -51,10 +54,15 @@ class AI:
         return self.field_cent + int(round((nang * self.field_num)))
       
     def ind_to_nang(self, ind):
-        return (ind - self.field_cent) / self.field_num
+        return (ind - self.field_cent) / float(self.field_num)
         
     def field_to_nang(self, field):
-        return self.ind_to_nang(field.argmax(axis=0))
+        nang_list = np.linspace(-1, 1, num=self.field_length, endpoint = True)
+        field = np.reshape(field, (-1))
+        center_of_mass = np.sum(np.multiply(nang_list, field)) / np.sum(field)
+
+        return center_of_mass
+        # return self.ind_to_nang(field.argmax(axis=0))
 
     def field_master(self, good, obstacles, walls, velocity):
 
@@ -62,6 +70,10 @@ class AI:
         repulsion_field = np.max((self.create_repulsion_field(obstacles), self.create_repulsion_field_wall(walls)), axis=0)
 
         sum_field = attract_field - repulsion_field
+
+        print (np.max(sum_field))
+        self.sum_field = sum_field
+
         heading = self.field_to_nang(sum_field)
         return velocity, heading
 
@@ -96,30 +108,35 @@ class AI:
 
             if (self.sub_state == 'finding_ball'):
                 elapsed_time = time.time() - self.search_start_time
-                print('elapsed time: ', elapsed_time)
+                # print('elapsed time: ', elapsed_time)
                 spin_time = self.config['virtballturncount']
-                move_time = spin_time + self.config['ballSearchSpinCount']
-                full_search_time = move_time + self.config['ballSearchMoveCount']
-
+                move_time = spin_time + self.config['ballSearchMoveCount']
+                full_search_time = move_time + self.config['ballSearchSpinCount']
                 if last_sub_state != 'finding_ball' or elapsed_time >= full_search_time:
                     print('resetting search')
+                    self.search_state = 'resetting'
                     self.search_start_time = time.time() 
                     self.virt_ball = self.generate_virtual_ball_random_loc()
+                    self.spin_speed = random.uniform(-1,1)
                 elif elapsed_time >= move_time: 
                     print('spinning on spot')
                     velocity = 0
                     desired_heading = 1
+                    self.search_state = 'scanning'
                 elif elapsed_time >= spin_time:
                     print('moving forward')
-                    velocity, desired_heading = self.field_master(self.virt_ball, objects, wall, self.forward_vel)
+                    self.search_state = 'moving'
+                    velocity, desired_heading = self.field_master(None, objects, wall, self.forward_vel)
                 else:
                     print('turning towards virtual ball')
-                    velocity, desired_heading = self.field_master(self.virt_ball, objects, wall, 0)
+                    self.search_state = 'turning'
+                    velocity = 0
+                    desired_heading = self.spin_speed
                     
             elif (self.sub_state == 'moving_to_ball'):
                 self.search_counter = 0
                 velocity, desired_heading = self.field_master(ball, objects, wall, self.forward_vel)
-                print('found ball heading towards: ',desired_heading)
+                # print('found ball heading towards: ',desired_heading)
                 #print('----------------------------')
         elif (state == 2): #Aligning ball with goal
 
@@ -164,7 +181,7 @@ class AI:
 
 
             elif(self.sub_state == 'Found Goal'):
-                print("found goal, moving towards it")
+                # print("found goal, moving towards it")
                 self.search_counter = 0
                 # attract_field = self.create_attraction_field(goal)
                 # repulse_field = self.create_repulsion_field(objects) + self.create_repulsion_field_wall(wall)
@@ -174,30 +191,32 @@ class AI:
                 velocity, desired_heading = self.field_master(goal, objects, wall, self.forward_vel)
 
             
-        print('----------------------------')
-        print("State:",state,"Substate:",self.sub_state)
+        # print('----------------------------')
+        # print("State:",state,"Substate:",self.sub_state)
 
         desired_rot = desired_heading
 
-        print("desired heading is", desired_rot)
+        # print("desired heading is", desired_rot)
 
 
-        velocity_multiplier = ((-1 * abs(desired_rot)) + 0.5) * 2
-#        velocity_multiplier = 1
+        # velocity_multiplier = ((-1 * abs(desired_rot)) + 0.5) * 2
+        velocity_multiplier = ((-1 * abs(desired_rot)) + 1)
+
+        # velocity_multiplier = 1
 
         velocity *= velocity_multiplier
         #Conversion shit for sim:
         desired_rot = desired_rot * -self.rotate_vel
         #print("movement:",vrep.simxGetObjectPosition(clientID, robot,-1, vrep.simx_opmode_blocking)[1])
         #return (heading, desired_rot, velocity)
-        if len(sum_field) != 0:
-            plt.cla()
-            plt.plot(np.linspace(-1, 1, self.field_length, endpoint=True), sum_field)
-            plt.plot([desired_heading] * 2, [0,1], 'r--')
-            plt.plot([self.ang_to_nang(ang) for (ang, _), _, _ in wall], np.ones(len(wall)), 'og')
-            plt.show(block=False)
-            plt.pause(0.01)
-        
+        # if len(sum_field) != 0:
+        #     plt.cla()
+        #     plt.plot(np.linspace(-1, 1, self.field_length, endpoint=True), sum_field)
+        #     plt.plot([desired_heading] * 2, [0,1], 'r--')
+        #     plt.plot([self.ang_to_nang(ang) for (ang, _), _, _ in wall], np.ones(len(wall)), 'og')
+        #     plt.show(block=False)
+        #     plt.pause(0.01)
+        #
         if (state == 2):
             desired_rot = 0
             velocity = 0
@@ -206,7 +225,8 @@ class AI:
             'state': state,
             'subState': self.sub_state,
             'desiredRot': float(desired_rot),
-            'desiredVelocity': float(velocity)
+            'desiredVelocity': float(velocity),
+            'searchState': self.search_state
         }
         #
         # return (desired_rot, velocity,state)
@@ -241,15 +261,18 @@ class AI:
     #Creates an attraction field, based entirely on the relative
     #angle given to it
     #----------------------------------------------------------------
-    def create_attraction_field(self,ball): 
-       polar,_,_ = ball
-       bearing, range = polar
-       ramp = np.linspace(0, 1, num=self.field_num + 1, endpoint=False)
-       ramp = ramp[1:]
-       base_field = np.concatenate([[1], np.flipud(ramp), ramp])
-       ball_ang = self.ang_to_ind(bearing)
-       rotated_field = np.roll(base_field, ball_ang, axis=0)
-       return np.reshape(rotated_field, (-1, 1))
+    def create_attraction_field(self,ball):
+        if ball is None:
+            return np.ones((self.field_length, 1))
+
+        polar,_,_ = ball
+        bearing, range = polar
+        ramp = np.linspace(0, 1, num=self.field_num + 1, endpoint=False)
+        ramp = ramp[1:]
+        base_field = np.concatenate([[1], np.flipud(ramp), ramp])
+        ball_ang = self.ang_to_ind(bearing)
+        rotated_field = np.roll(base_field, ball_ang, axis=0)
+        return np.reshape(rotated_field, (-1, 1))
 
     #----------------------------------------------------------------
     #Creates a repulsion based on both the object location
@@ -263,18 +286,17 @@ class AI:
             obj_pol,_,_ = obj
             obj_ang,obj_dist= obj_pol
             obj_ind = self.ang_to_ind(obj_ang)
-            obj_width_ind = 10
             try:
-                obj_width_ang = math.asin(0.09 / obj_dist)
+                obj_width_ang = math.asin(self.config['objWidth'] / obj_dist)
             except ValueError:
-                cur_field = np.ones((field_length, 1))
+                cur_field = np.ones((self.field_length, 1))
             else:
                 cur_field = np.zeros((self.field_length,1))
 
                 left_ind = self.ang_to_ind(obj_ang - obj_width_ang)
                 right_ind = self.ang_to_ind(obj_ang + obj_width_ang)
             
-                print("creating obj from {} to {}".format(left_ind, right_ind))
+                # print("creating obj from {} to {}".format(left_ind, right_ind))
 
                 cur_field[left_ind:right_ind] = 1
             obj_fields.append(cur_field)
@@ -329,10 +351,10 @@ class AI:
         elif (state == 2): #Have ball in dribbler, align with the goal
             if goal is None:
                 sub_state = 'Looking for Goal'
-                print('substate set to:', sub_state)
+                # print('substate set to:', sub_state)
             else:
                 sub_state = 'Found Goal'
-                print('substate set to:', sub_state)
+                # print('substate set to:', sub_state)
         return sub_state
 
     #----------------------------------------------------------------
@@ -345,11 +367,12 @@ class AI:
             
         polar, cartesian, reliable = ball
         bearing, range = polar
-        #print("range", range)
-        if range >= self.config['distToGrab']:
+
+        if not self.found_ball and range >= self.config['distToGrab']:
             state = 1
         else:
             state = 2
+            self.found_ball = True
         return state
 
     #----------------------------------------------------------------
