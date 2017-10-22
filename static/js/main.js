@@ -30,9 +30,14 @@ var app = new Vue({
             }
             xhr.send();
         },
-        start: function() {
+        blue: function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/api/start");
+            xhr.open("GET", "/api/blue");
+            xhr.send();
+        },
+        yellow: function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/yellow");
             xhr.send();
         },
         stop: function() {

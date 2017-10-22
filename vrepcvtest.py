@@ -39,7 +39,7 @@ if clientID != -1:
             analyser.analyse(img)
             alpha,beta,gamma = vrep.simxGetObjectOrientation(clientID, robot,-1, vrep.simx_opmode_blocking)[1]
             print("Rotation",math.degrees(gamma))
-            rotation,velocity,state = navigation.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.goalPos, analyser.wallPoses)
+            rotation,velocity,state = navigation.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.bluePos, analyser.wallPoses)
             #print("cunt")
             #print("MOVEMENT:",movement)
             to_rotate = [alpha,beta,gamma + (deltaT * rotation)]

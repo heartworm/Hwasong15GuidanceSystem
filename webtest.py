@@ -14,7 +14,7 @@ try:
     with WebcamStream() as cam:
         for frame in cam.frames():
             analyser.analyse(frame)
-            ai.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.goalPos, analyser.wallPoses)
+            ai.state_controller(analyser.ballPos, analyser.obstaclePoses, analyser.bluePos, analyser.wallPoses)
 except KeyboardInterrupt:
     print("quitting.")
 cv2.destroyAllWindows()

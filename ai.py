@@ -142,6 +142,9 @@ class AI:
                     self.search_state = 'turning'
                     velocity = 0
                     desired_heading = -1 if self.last_ball_left else 1
+
+                    if ((elapsed_time) // 0.5) % 2 == 1:
+                        desired_heading = 0
                     
             elif (self.sub_state == 'moving_to_ball'):
                 self.search_counter = 0
@@ -170,6 +173,11 @@ class AI:
                     self.search_state = 'turning'
                     velocity = 0
                     desired_heading = -1 if self.last_goal_left else 1
+                    if ((elapsed_time) // 0.5) % 2 == 1:
+                        desired_heading = 0
+
+
+
 
             elif(self.sub_state == 'Found Goal'):
                 # print("found goal, moving towards it")
@@ -191,11 +199,24 @@ class AI:
 
 
         # velocity_multiplier = ((-1 * abs(desired_rot)) + 0.5) * 2
+
+
+
+
         velocity_multiplier = ((-1 * abs(desired_rot)) + 1)
 
         # velocity_multiplier = 1
 
-        velocity *= velocity_multiplier
+        new_velocity = velocity * velocity_multiplier
+        min_vel = 0.25
+        if abs(velocity) > 0.25 and abs(new_velocity) < 0.25:
+            if velocity < 0:
+                velocity = -min_vel
+            else:
+                velocity = min_vel
+        else:
+            velocity = new_velocity
+
         #Conversion shit for sim:
         desired_rot = desired_rot * -self.rotate_vel
         #print("movement:",vrep.simxGetObjectPosition(clientID, robot,-1, vrep.simx_opmode_blocking)[1])

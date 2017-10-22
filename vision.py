@@ -21,7 +21,8 @@ class ImageAnalyser:
         }
 
         self.ballPos = None
-        self.goalPos = None
+        self.yellowPos = None
+        self.bluePos = None
         self.wallPoses = []
         self.obstaclePoses = []
 
@@ -136,36 +137,64 @@ class ImageAnalyser:
 
         # cv2.imshow('wallgrass', wallDisp)
         self.imshow('wallgrass', wallDisp)
-        goalMask = self.goalThreshold(hsv)
+        blueMask = self.goalThreshold(hsv, True)
 
-        goalContours = self.findContours(np.array(goalMask))
-        goalMask = cv2.cvtColor(goalMask, cv2.COLOR_GRAY2BGR)
-        goalInfos = [self.contourInfo(contour) for contour in goalContours]
-        goalInfos = [info for info in goalInfos if info["area"] >= self.area * 0.01]
-        goalInfos = sorted(goalInfos, key=areaGetter, reverse=True)
-        if len(goalInfos) > 0:
-            goalInfo = goalInfos[0]
-            self.goalPos = self.realCoordinates(goalInfo, self.config['properties']['goal'])
-            polar, cartesian, reliable = self.goalPos
+        blueContours = self.findContours(np.array(blueMask))
+        blueMask = cv2.cvtColor(blueMask, cv2.COLOR_GRAY2BGR)
+        blueInfos = [self.contourInfo(contour) for contour in blueContours]
+        blueInfos = [info for info in blueInfos if info["area"] >= self.area * 0.01]
+        blueInfos = sorted(blueInfos, key=areaGetter, reverse=True)
+        if len(blueInfos) > 0:
+            blueInfo = blueInfos[0]
+            self.bluePos = self.realCoordinates(blueInfo, self.config['properties']['goal'])
+            polar, cartesian, reliable = self.bluePos
             infoText = None
             if polar[1] is not None:
                 text = "{:.2f}, {:.2f}, {}".format(cartesian[0], cartesian[1], reliable)
-                cv2.putText(goalMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                cv2.putText(blueMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
                 text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
-                cv2.putText(goalMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
+                cv2.putText(blueMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,0,255))
                 infoText = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
             else:
-                self.goalPos = None
-            self.drawContourInfo(denoised, goalInfo, color=(0,255,0), text=infoText)
+                self.bluePos = None
+            self.drawContourInfo(denoised, blueInfo, color=(0,255,0), text=infoText)
         else:
-            self.goalPos = None
+            self.bluePos = None
 
-        self.imshow('goals', goalMask)
+        yellowMask = self.goalThreshold(hsv, False)
+
+
+        yellowContours = self.findContours(np.array(yellowMask))
+        yellowMask = cv2.cvtColor(yellowMask, cv2.COLOR_GRAY2BGR)
+        yellowInfos = [self.contourInfo(contour) for contour in yellowContours]
+        yellowInfos = [info for info in yellowInfos if info["area"] >= self.area * 0.01]
+        yellowInfos = sorted(yellowInfos, key=areaGetter, reverse=True)
+        if len(yellowInfos) > 0:
+            yellowInfo = yellowInfos[0]
+            self.yellowPos = self.realCoordinates(yellowInfo, self.config['properties']['goal'])
+            polar, cartesian, reliable = self.yellowPos
+            infoText = None
+            if polar[1] is not None:
+                text = "{:.2f}, {:.2f}, {}".format(cartesian[0], cartesian[1], reliable)
+                cv2.putText(yellowMask, text, (10, int(self.res[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255))
+                text = "{:.2f}, {:.2f}".format(math.degrees(polar[0]), polar[1])
+                cv2.putText(yellowMask, text, (10, int(self.res[1] - 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255))
+                infoText = "{:.2f}, {:.2f}, {}".format(math.degrees(polar[0]), polar[1], reliable)
+            else:
+                self.yellowPos = None
+            self.drawContourInfo(denoised, yellowInfo, color=(0, 255, 0), text=infoText)
+        else:
+            self.yellowPos = None
+
+
+
+        self.imshow('blueGoals', blueMask)
+        self.imshow('yellowGoals', yellowMask)
         self.imshow('status', denoised)
 
         self.status = {
             'ballPos': self.coord_to_dict(self.ballPos),
-            'goalPos': self.coord_to_dict(self.goalPos),
+            'goalPos': self.coord_to_dict(self.bluePos),
             'obstaclePoses': [self.coord_to_dict(obstaclePos) for obstaclePos in self.obstaclePoses],
             'wallPoses': [self.coord_to_dict(wallPos) for wallPos in self.wallPoses]
         }
@@ -308,10 +337,12 @@ class ImageAnalyser:
     def obstacleThreshold(self, hsv):
         return self.threshold(hsv, 'obstacle')
 
-    def goalThreshold(self, hsv):
-        blueMask = self.threshold(hsv, 'blueGoal')
-        yellowMask = self.threshold(hsv, 'yellowGoal')
-        goalMask = np.maximum(blueMask, yellowMask)
+    def goalThreshold(self, hsv, is_blue):
+        if is_blue:
+            goalMask = self.threshold(hsv, 'blueGoal')
+        else:
+            goalMask = self.threshold(hsv, 'yellowGoal')
+        # goalMask = np.maximum(blueMask, yellowMask)
         return self.open(goalMask, 9)
 
     def threshold(self, hsv, name):

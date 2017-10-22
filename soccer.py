@@ -99,7 +99,12 @@ class Soccer:
                     self.image_event.set()
 
                     #AI -------------
-                    self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, self.analyser.goalPos, self.analyser.wallPoses)
+                    if self.is_blue:
+                        goal = self.analyser.bluePos
+                    else:
+                        goal = self.analyser.yellowPos
+
+                    self.ai.state_controller(self.analyser.ballPos, self.analyser.obstaclePoses, goal, self.analyser.wallPoses)
 
                     ai_status = self.ai.status
 
@@ -115,9 +120,10 @@ class Soccer:
                         pass
                     raise
 
-    def start(self):
+    def start(self, is_blue):
         if self.run_thread is None or not self.run_thread.is_alive():
             self.stop_flag = False
+            self.is_blue = is_blue
             self.init()
             self.run_thread = Thread(target=self.run)
             self.run_thread.start()
@@ -223,7 +229,17 @@ def load():
 
 @app.route('/api/start')
 def start():
-    soccer.start()
+    soccer.start(False)
+    return ''
+
+@app.route('/api/blue')
+def blue():
+    soccer.start(True)
+    return ''
+
+@app.route('/api/yellow')
+def yellow():
+    soccer.start(False)
     return ''
 
 @app.route('/api/stop')
